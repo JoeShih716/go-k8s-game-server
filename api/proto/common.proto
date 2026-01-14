@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto;proto";
+
+// ErrorCode 定義了系統通用的錯誤代碼
+enum ErrorCode {
+  SUCCESS = 0;        // 成功，無錯誤
+  UNKNOWN_ERROR = 1;  // 未知錯誤
+  INVALID_PARAMS = 2; // 參數無效
+  AUTH_FAILED = 3;    // 驗證失敗
+  SERVER_ERROR = 4;   // 伺服器內部錯誤
+  MAINTENANCE = 5;    // 系統維護中
+}
+
+// PacketHeader 定義了所有封包的標準標頭資料
+message PacketHeader {
+  string req_id = 1;         // 請求唯一識別碼 (UUID)
+  int64 timestamp = 2;       // Unix 時間戳記 (毫秒)
+  string user_id = 3;        // 使用者 ID (若已登入)
+  string session_id = 4;     // 會話 Token (用於驗證)
+  string client_version = 5; // 客戶端版本號 (用於相容性檢查)
+}

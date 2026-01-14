@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package gateway;
+
+option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto;proto";
+
+// Define connector control commands
+// These messages are typically used for internal communication (e.g. Redis PubSub)
+
+// KickUserReq 用於請求強制踢除使用者的命令
+message KickUserReq {
+  string user_id = 1;   // 要踢除的使用者 ID
+  string reason = 2;    // 踢除原因
+  int32 error_code = 3; // 對應的錯誤代碼 (參考 common.ErrorCode)
+}
+
+// BroadcastReq 用於請求廣播訊息的命令
+message BroadcastReq {
+  // 接收廣播的使用者 ID 列表
+  // 若為空列表，表示進行全服廣播 (World Broadcast)
+  repeated string user_ids = 1;
+  bytes payload = 2;       // 要發送的原始二進位訊息內容
+  string service_from = 3; // 發起廣播的服務來源 (例如: "mgmt-service")
+}
+
+// JoinServiceReq 用於請求加入特定服務的命令
+message JoinServiceReq {
+    string user_id = 1;      // 使用者 ID
+    string service_name = 2; // 要加入的服務名稱 (例如: "fishing-service")
+    string room_id = 3;      // 指定房間 ID (選填，若加入特定房間)
+    bytes token = 4;         // 加入令牌 (選填，用於驗證)
+}
