@@ -1,0 +1,25 @@
+# 使用 Go 1.25
+FROM golang:1.25-alpine
+
+# 安裝基礎工具
+RUN apk add --no-cache git make protobuf
+
+# 設定工作目錄
+WORKDIR /app
+
+# 安裝 Air (用於熱重載)
+# 使用官方建議的 install.sh
+RUN go install github.com/air-verse/air@latest
+
+# 預設複製 go.mod 和 go.sum (利用 Docker Cache)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 複製其餘程式碼
+COPY . .
+
+# 暴露端口
+EXPOSE 8080
+
+# 啟動 Air
+CMD ["air", "-c", ".air.toml"]

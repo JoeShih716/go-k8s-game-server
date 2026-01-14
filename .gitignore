@@ -1,0 +1,28 @@
+# Binaries
+/connector
+/bin/
+/dist/
+/tmp/
+
+# OS Specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Go
+vendor/
+
+# Air
+.air.toml
+!/.air.toml # We want to track our config though
+
+# Application Specific
+*.log
+config/*.local.yaml # Maybe? No, for now let's track local.yaml as template or default
+# If we want to ignore local secrets, we should perhaps name it config.override.yaml

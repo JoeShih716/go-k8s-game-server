@@ -1,0 +1,26 @@
+app:
+  name: "game-connector"
+  env: "local"
+  port: 8080
+
+redis:
+  addr: "game-redis:6379"  # Docker Compose 中的 Service Name
+  password: ""
+  db: 0
+
+mysql:
+  host: "game-mysql"       # Docker Compose 中的 Service Name
+  port: 3306
+  user: "user"
+  password: "password"
+  dbname: "game_db"
+
+wss:
+  path: "/ws"
+  allowed_origins:
+    - "*"
+  read_buffer_size: 1024
+  write_buffer_size: 1024
+  write_wait_sec: 10
+  pong_wait_sec: 60
+  max_message_size: 512
