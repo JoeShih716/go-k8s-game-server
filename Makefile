@@ -36,3 +36,20 @@ keep-clean:
 		fi; \
 	done
 	@echo "清理完成！"
+
+# 安裝必要工具 (Protoc + Go Plugins) - 僅限 macOS (Homebrew)
+install-tools:
+	@echo "正在安裝 Protobuf Compiler..."
+	-brew install protobuf
+	@echo "正在安裝 Go Protobuf Plugins..."
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	@echo "安裝完成！請確保您的 PATH 包含 \$$(go env GOPATH)/bin"
+
+# 生成 Protobuf 代碼
+gen-proto:
+	@echo "正在生成 Protobuf代碼..."
+	@protoc --go_out=. --go_opt=paths=source_relative \
+	        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	        api/proto/*.proto
+	@echo "Protobuf 生成完成！"
