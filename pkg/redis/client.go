@@ -64,13 +64,19 @@ func (c *Client) Close() error {
 //	ctx: context.Context - 上下文
 //	key: string - Redis 鍵
 //	value: any - 要儲存的結構體 (必須能被 json.Marshal)
-//	expiration: time.Duration - 過期時間 (0 表示不過期)
-func (c *Client) SetStruct(ctx context.Context, key string, value any, expiration time.Duration) error {
+//	expiration: ...time.Duration - (選填) 過期時間，若不填則預設為 0 (不過期)
+func (c *Client) SetStruct(ctx context.Context, key string, value any, expiration ...time.Duration) error {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("failed to marshal value: %w", err)
 	}
-	return c.rdb.Set(ctx, key, data, expiration).Err()
+
+	var exp time.Duration
+	if len(expiration) > 0 {
+		exp = expiration[0]
+	}
+
+	return c.rdb.Set(ctx, key, data, exp).Err()
 }
 
 // GetStruct 從 Redis 讀取 JSON 並反序列化為結構體
@@ -101,14 +107,19 @@ func (c *Client) GetStruct(ctx context.Context, key string, dest any) error {
 //	ctx: context.Context - 上下文
 //	key: string - 鎖的鍵名
 //	value: string - 鎖的持有者標識 (通常是 uuid，用於釋放時驗證)
-//	expiration: time.Duration - 鎖的自動過期時間 (防止死鎖)
+//	expiration: ...time.Duration - (選填) 鎖的自動過期時間，為了安全起見，強烈建議設定。若不填則預設為 0 (需謹慎使用)
 //
 // 回傳值:
 //
 //	bool: 是否成功獲取鎖
 //	error: Redis 系統錯誤
-func (c *Client) AcquireLock(ctx context.Context, key string, value string, expiration time.Duration) (bool, error) {
-	success, err := c.rdb.SetNX(ctx, key, value, expiration).Result()
+func (c *Client) AcquireLock(ctx context.Context, key string, value string, expiration ...time.Duration) (bool, error) {
+	var exp time.Duration
+	if len(expiration) > 0 {
+		exp = expiration[0]
+	}
+
+	success, err := c.rdb.SetNX(ctx, key, value, exp).Result()
 	if err != nil {
 		return false, err
 	}
