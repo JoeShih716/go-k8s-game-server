@@ -8,6 +8,7 @@
 -   **結構體存取**: 提供 `SetStruct` 與 `GetStruct` 泛型方法，自動處理 JSON 序列化與反序列化。
 -   **Pub/Sub**: 封裝了發布/訂閱模式，便於跨服務傳遞訊息。
 -   **分散式鎖**: 提供 `AcquireLock` 與 `ReleaseLock`，用於處理跨 Pod 的並發控制 (e.g., 搶紅包, 同一房間的狀態修改)。
+-   **啟動韌性 (Resilience)**: `NewClient` 包含連線重試邏輯，確保在 Redis 尚未就緒時也能優雅等待。
 
 ## 使用範例
 

@@ -8,7 +8,8 @@
 
 ### 設計哲學
 -   **抽象化 (Abstraction)**: 隱藏了 WebSocket 底層的複雜性 (Ping/Pong, Read/Write Loop, Buffer Management)。
--   **安全性 (Security)**: 內建 CSRF 防護 (Origin Check) 與連線限制。
+-   **安全性 (Security)**: 內建 CSRF 防護 (Strict Origin Check) 與連線限制。
+-   **韌性 (Resilience)**: 內建 Panic Recovery 機制，確保單一 Session 崩潰不會影響整個服務。
 -   **擴充性 (Scale)**: 採用 Pub/Sub 模式 (Subscriber Interface)，讓業務邏輯 (如大廳、斷線重連) 可以輕鬆掛載，而不必修改核心代碼。
 
 ### 核心介面
@@ -65,6 +66,7 @@ resp, err := client.Spin(ctx, &pb.SpinReq{Bet: 100})
 ### 設計哲學
 -   **便捷 (Convenience)**: 遊戲開發超常用 Struct (例如 `PlayerState`, `RoomInfo`)，所以我們特地封裝了 `GetStruct`/`SetStruct` 來自動處理 JSON。
 -   **協作 (Coordination)**: 在 K8s 多 Pod 環境下，Local Memory 是不可靠的。Redis 是所有服務共享的「真實狀態來源」。
+-   **韌性 (Resilience)**: 內建 Startup Retry 機制 (Exponential Backoff)，解決容器啟動順序造成的連線失敗問題。
 
 ### 核心功能
 -   **`AcquireLock`**: 分散式鎖。這是防止「連點兩次按鈕導致重複扣款」或「兩個人同時坐同一個位置」的神器。
@@ -91,6 +93,7 @@ if success, _ := redisClient.AcquireLock(ctx, lockKey, userID, 3*time.Second); s
 
 ### 設計哲學
 -   **標準化 (Standardization)**: 強制統一的連線池設定 (MaxOpen/MaxIdle)，這是防止資料庫被海量連線衝垮的關鍵。
+-   **韌性 (Resilience)**: 內建 Startup Retry 機制，當資料庫尚未就緒時自動重試，避免服務直接 Panic。
 -   **開發生產力 (Productivity)**: 選用 GORM，讓一般的 CRUD 操作 (Create, Read, Update, Delete) 變得像寫英文句子一樣簡單。
 
 ### 核心行為

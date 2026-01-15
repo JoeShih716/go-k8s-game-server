@@ -8,6 +8,7 @@
 -   **安全防護**: 支援 `CheckOrigin` 檢查，可透過 Config 設定允許的來源網域。
 -   **讀寫分離**: 每個連線啟動兩個 Goroutine (ReadPump / WritePump) 處理 I/O，互不阻塞。
 -   **優雅關閉**: 支援 Context 取消傳播。
+-   **Panic Recovery**: 內建 Recover 機制，確保單一連線發生 Panic 時不會導致整個伺服器崩潰。
 
 ## 使用範例
 

@@ -9,6 +9,7 @@
     -   預設 `SkipDefaultTransaction: true` 提升寫入效能 (約快 30%)。
     -   強制設定 `MaxOpenConns` 與 `MaxIdleConns` 避免連線洩漏。
 -   **自動重連**: GORM 的 MySQL Driver 內建了斷線重連機制。
+-   **啟動韌性 (Startup Resilience)**: 內建 Exponential Backoff 重試機制。當資料庫尚未就緒時 (例如 Docker 啟動順序)，應用程式會嘗試重連而非直接崩潰 (Panic)。
 -   **型別安全**: 透過 Struct 定義 Schema，減少 SQL 拼寫錯誤。
 
 ## 使用範例
