@@ -34,8 +34,12 @@
         </div>
 
         <div class="input-group">
-            <input type="text" id="msgInput" placeholder="輸入訊息..." onkeypress="if(event.key === 'Enter') send()">
-            <button class="primary" onclick="send()" id="btnSend" disabled>發送</button>
+            <select id="serviceType">
+                <option value="1">Stateless (Demo)</option>
+                <option value="2">Stateful (Fishing)</option>
+            </select>
+            <input type="text" id="payloadInput" placeholder="Payload (e.g. valid-token)" onkeypress="if(event.key === 'Enter') send()" value="test-payload">
+            <button class="primary" onclick="send()" id="btnSend" disabled>發送 (JSON)</button>
         </div>
 
         <div id="log"></div>
@@ -65,7 +69,7 @@
 
             ws.onerror = (error) => {
                 logMsg('System', 'Error detected', 'msg-sys');
-                console.error(error);
+                // console.error(error);
             };
 
             ws.onmessage = (event) => {
@@ -80,12 +84,17 @@
         }
 
         function send() {
-            const input = document.getElementById('msgInput');
-            const txt = input.value;
-            if (ws && ws.readyState === WebSocket.OPEN && txt) {
-                ws.send(txt);
-                logMsg('You', txt, 'msg-sent');
-                input.value = '';
+            const serviceType = parseInt(document.getElementById('serviceType').value);
+            const payload = document.getElementById('payloadInput').value;
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const msg = {
+                    service_type: serviceType,
+                    payload: payload
+                };
+                const jsonStr = JSON.stringify(msg);
+                ws.send(jsonStr);
+                logMsg('You', jsonStr, 'msg-sent');
             }
         }
 

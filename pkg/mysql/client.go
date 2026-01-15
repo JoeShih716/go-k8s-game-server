@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"fmt"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -31,9 +32,34 @@ func NewClient(cfg Config) (*Client, error) {
 		Logger:                 newLogger(cfg.LogLevel),
 	}
 
-	db, err := gorm.Open(mysql.Open(cfg.DSN()), gormConfig)
+	var db *gorm.DB
+	var err error
+
+	// Retry mechanism for database connection
+	maxRetries := 10
+	retryInterval := 2 * time.Second
+
+	for i := 0; i < maxRetries; i++ {
+		db, err = gorm.Open(mysql.Open(cfg.DSN()), gormConfig)
+		if err == nil {
+			// Try pinging to ensure connection is actually alive
+			rawDB, pingErr := db.DB()
+			if pingErr == nil {
+				if err = rawDB.Ping(); err == nil {
+					break // Connection successful
+				}
+				err = pingErr
+			}
+		}
+
+		if i < maxRetries-1 {
+			fmt.Printf("Failed to connect to MySQL (attempt %d/%d): %v. Retrying in %v...\n", i+1, maxRetries, err, retryInterval)
+			time.Sleep(retryInterval)
+		}
+	}
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to mysql: %w", err)
+		return nil, fmt.Errorf("failed to connect to mysql after %d attempts: %w", maxRetries, err)
 	}
 
 	// 取得底層 sql.DB 物件以設定連線池

@@ -10,7 +10,9 @@ import (
 
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 	"github.com/JoeShih716/go-k8s-game-server/internal/connector/handler"
+	"github.com/JoeShih716/go-k8s-game-server/internal/connector/router"
 	"github.com/JoeShih716/go-k8s-game-server/internal/connector/session"
+	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )
 
@@ -35,8 +37,16 @@ func main() {
 	// 3. 初始化 Session Manager
 	sessionMgr := session.NewManager()
 
-	// 4. 初始化 WebSocket Handler
-	wsHandler := handler.NewWebsocketHandler(sessionMgr)
+	// 4. 初始化 Router & Discovery
+	discovery := router.NewStaticDiscovery(cfg.Services)
+	smartRouter := router.NewSmartRouter(discovery)
+
+	// 5. 初始化 gRPC Pool
+	grpcPool := grpcpkg.NewPool()
+	defer grpcPool.Close()
+
+	// 6. 初始化 WebSocket Handler
+	wsHandler := handler.NewWebsocketHandler(sessionMgr, smartRouter, grpcPool)
 
 	// 5. 初始化 WebSocket Server
 	wsConfig := &wss.Config{

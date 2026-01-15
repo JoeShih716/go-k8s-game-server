@@ -53,6 +53,44 @@ services:
       mysql:
         condition: service_healthy
 
+  stateless-demo:
+    build:
+      context: .
+      dockerfile: build/package/Dockerfile.dev
+    container_name: game-stateless-demo
+    environment:
+      - APP_ENV=local
+      - PORT=9001
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./:/app
+      - go_cache:/root/.cache/go-build
+      - go_mod_cache:/go/pkg/mod
+    command: air -c .air.demo.toml
+    depends_on:
+      - connector
+
+  central:
+    build:
+      context: .
+      dockerfile: build/package/Dockerfile.dev
+    container_name: game-central
+    environment:
+      - APP_ENV=local
+      - PORT=9003
+    ports:
+      - "9003:9003"
+    volumes:
+      - ./:/app
+      - go_cache:/root/.cache/go-build
+      - go_mod_cache:/go/pkg/mod
+    command: air -c .air.central.toml
+    depends_on:
+      - redis
+
 volumes:
   redis_data:
   mysql_data:
+  go_cache:        # For GOCACHE (/root/.cache/go-build)
+  go_mod_cache:    # For GOMODCACHE (/go/pkg/mod)

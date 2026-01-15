@@ -39,10 +39,25 @@ func NewClient(cfg Config) (*Client, error) {
 		DB:       cfg.DB,
 	})
 
-	// 測試連線
+	// 測試連線 (Retry logic)
 	ctx := context.Background()
-	if err := rdb.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("failed to connect to redis: %w", err)
+	maxRetries := 10
+	retryInterval := 2 * time.Second
+	var err error
+
+	for i := 0; i < maxRetries; i++ {
+		if err = rdb.Ping(ctx).Err(); err == nil {
+			break // Connection successful
+		}
+
+		if i < maxRetries-1 {
+			fmt.Printf("Failed to connect to Redis (attempt %d/%d): %v. Retrying in %v...\n", i+1, maxRetries, err, retryInterval)
+			time.Sleep(retryInterval)
+		}
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to redis after %d attempts: %w", maxRetries, err)
 	}
 
 	return &Client{rdb: rdb}, nil
@@ -145,4 +160,56 @@ func (c *Client) ReleaseLock(ctx context.Context, key string, value string) erro
 	`
 	_, err := c.rdb.Eval(ctx, script, []string{key}, value).Result()
 	return err
+}
+
+// -----------------------------------------------------------
+// Basic Commands (String & Key)
+// -----------------------------------------------------------
+
+// Set 設定 Key-Value
+func (c *Client) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
+	return c.rdb.Set(ctx, key, value, expiration).Err()
+}
+
+// Get 取得 Key-Value
+func (c *Client) Get(ctx context.Context, key string) (string, error) {
+	return c.rdb.Get(ctx, key).Result()
+}
+
+// Del 刪除 Key
+func (c *Client) Del(ctx context.Context, keys ...string) error {
+	return c.rdb.Del(ctx, keys...).Err()
+}
+
+// Exists 檢查 Key 是否存在
+func (c *Client) Exists(ctx context.Context, keys ...string) (bool, error) {
+	val, err := c.rdb.Exists(ctx, keys...).Result()
+	if err != nil {
+		return false, err
+	}
+	return val > 0, nil
+}
+
+// Expire 設定 Key 過期時間
+func (c *Client) Expire(ctx context.Context, key string, expiration time.Duration) error {
+	return c.rdb.Expire(ctx, key, expiration).Err()
+}
+
+// -----------------------------------------------------------
+// Set Commands
+// -----------------------------------------------------------
+
+// SAdd 加入集合
+func (c *Client) SAdd(ctx context.Context, key string, members ...any) error {
+	return c.rdb.SAdd(ctx, key, members...).Err()
+}
+
+// SMembers 取得集合所有成員
+func (c *Client) SMembers(ctx context.Context, key string) ([]string, error) {
+	return c.rdb.SMembers(ctx, key).Result()
+}
+
+// SRem 移除集合成員
+func (c *Client) SRem(ctx context.Context, key string, members ...any) error {
+	return c.rdb.SRem(ctx, key, members...).Err()
 }

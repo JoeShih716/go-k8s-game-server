@@ -24,3 +24,11 @@ wss:
   write_wait_sec: 10
   pong_wait_sec: 60
   max_message_size: 512
+
+services:
+  # Map ServiceType name to address
+  # defined in routing.proto: STATELESS, STATEFUL, etc.
+  # For now, we point to non-existent ports to test resilience
+  slots-service: "stateless-demo:9001"
+  fishing-service: "localhost:9002"
+  central: "central:9003"

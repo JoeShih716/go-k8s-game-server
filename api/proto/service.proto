@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package service;
+
+option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto;proto";
+
+import "api/proto/common.proto";
+
+// GameService 定義了後端遊戲服務標準介面
+service GameService {
+  // Call 處理來自 Connector 的通用請求
+  rpc Call(GameRequest) returns (GameResponse);
+}
+
+// GameRequest 包含請求的完整上下文
+message GameRequest {
+  common.PacketHeader header = 1; // 標準標頭 (UserID, SessionID)
+  bytes payload = 2;              // 業務邏輯 payload (可能是另一個 Proto 或 JSON)
+}
+
+// GameResponse 包含回應結果
+message GameResponse {
+  common.ErrorCode code = 1;      // 錯誤碼 (0 = Success)
+  bytes payload = 2;              // 回應 payload
+  string error_message = 3;       // 錯誤訊息 (Debug用)
+}

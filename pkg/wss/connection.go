@@ -102,6 +102,9 @@ func (c *connection) GetTag(key string) (value any, exists bool) {
 // @param cfg - WebSocket 伺服器的設定參數。
 func (c *connection) readPump(cfg *Config) {
 	defer func() {
+		if r := recover(); r != nil {
+			c.logger.Error("read pump panic recovered", "panic", r)
+		}
 		c.hub.unregister <- c
 		err := c.conn.Close()
 		if err != nil {
@@ -130,6 +133,9 @@ func (c *connection) readPump(cfg *Config) {
 func (c *connection) writePump(cfg *Config) {
 	ticker := time.NewTicker(cfg.PingPeriod)
 	defer func() {
+		if r := recover(); r != nil {
+			c.logger.Error("write pump panic recovered", "panic", r)
+		}
 		ticker.Stop()
 		err := c.conn.Close()
 		if err != nil {

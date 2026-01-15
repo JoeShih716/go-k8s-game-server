@@ -45,6 +45,14 @@ func (h *hub) registerSubscriber(subscriber Subscriber) {
 // run 啟動 hub 的主事件迴圈。
 // 這個迴圈會處理客戶端的註冊、註銷、訊息傳遞以及優雅關閉的邏輯。
 func (h *hub) run() {
+	defer func() {
+		if r := recover(); r != nil {
+			h.logger.Error("hub run panic recovered", "panic", r)
+			// Optional: Restart hub or exit gracefully? For now just log.
+			// Since hub is critical, if it panics, the server might be in bad state.
+		}
+	}()
+
 	for {
 		select {
 		case client := <-h.register:

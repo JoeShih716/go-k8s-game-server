@@ -10,10 +10,11 @@ import (
 
 // Config 總配置結構
 type Config struct {
-	App   AppConfig   `yaml:"app"`
-	Redis RedisConfig `yaml:"redis"`
-	MySQL MySQLConfig `yaml:"mysql"`
-	WSS   WSSConfig   `yaml:"wss"`
+	App      AppConfig         `yaml:"app"`
+	Redis    RedisConfig       `yaml:"redis"`
+	MySQL    MySQLConfig       `yaml:"mysql"`
+	WSS      WSSConfig         `yaml:"wss"`
+	Services map[string]string `yaml:"services"`
 }
 
 type AppConfig struct {

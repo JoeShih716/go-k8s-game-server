@@ -6,9 +6,8 @@ import "time"
 // 這是最基礎的資料結構，用於在各個服務層之間傳遞使用者資訊。
 // 注意：此處不包含 Balance (餘額)，餘額操作請透過 Wallet 介面。
 type User struct {
-	ID        string    // 使用者唯一標識符 (UUID 或資料庫 ID)
+	ID        string    // 使用者唯一標識符
 	Name      string    // 使用者顯示名稱
-	AvatarURL string    // 使用者頭像連結
 	CreatedAt time.Time // 帳號建立時間
 	UpdatedAt time.Time // 最後更新時間
 	Tags      []string  // 使用者標籤 (例如: "vip", "newbie")

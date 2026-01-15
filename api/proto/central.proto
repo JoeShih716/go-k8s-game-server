@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package central;
+
+option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto;proto";
+
+import "api/proto/routing.proto";
+
+// CentralService 定義了遊戲服務註冊、發現與玩家驗證的核心功能
+service CentralService {
+  // -----------------------------------------------------------
+  // Service Registry (供後端服務呼叫)
+  // -----------------------------------------------------------
+
+  // Register: 服務啟動時呼叫，註冊自己的地址與負責的遊戲 ID
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // Heartbeat: 定期呼叫，維持服務在 Registry 中的活躍狀態 (Renew TTL)
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  // Deregister: 服務關閉時主動呼叫，立即移除服務 (Graceful Shutdown)
+  rpc Deregister(DeregisterRequest) returns (DeregisterResponse);
+
+  // -----------------------------------------------------------
+  // Player & Routing (供 Connector 呼叫)
+  // -----------------------------------------------------------
+
+  // Login: 玩家連線後第一件事，驗證 Token (尚未實作詳細邏輯)
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // GetRoute: 玩家請求進入遊戲時呼叫，取得目標服務地址
+  rpc GetRoute(GetRouteRequest) returns (GetRouteResponse);
+}
+
+// -----------------------------------------------------------
+// Messages
+// -----------------------------------------------------------
+
+message RegisterRequest {
+  string service_name = 1;     // 服務名稱 (ex: "slots-service")
+  routing.ServiceType type = 2;// 服務類型 (STATELESS/STATEFUL)
+  string endpoint = 3;         // 可被 Connector 連線的地址 (ex: "10.0.1.5:9001")
+  // 未來可加入: []int32 game_ids, int32 current_load
+}
+
+message RegisterResponse {
+  string lease_id = 1;         // 註冊成功後回傳的租約 ID (用於 Heartbeat)
+  int64 ttl_seconds = 2;       // 預期多久要發送一次心跳
+}
+
+message HeartbeatRequest {
+  string lease_id = 1;         // 從 Register 取得的 ID
+  int32 current_load = 2;      // 當前負載 (連線數)
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+}
+
+message DeregisterRequest {
+  string lease_id = 1;         // 從 Register 取得的 ID
+}
+
+message DeregisterResponse {
+  bool success = 1;
+}
+
+message LoginRequest {
+  string token = 1;            // 認證 Token
+  // client_info, device_id 等
+}
+
+message LoginResponse {
+  string user_id = 1;          // 驗證成功後回傳 UserID
+  bool success = 2;
+  string error_message = 3;
+}
+
+message GetRouteRequest {
+  string user_id = 1;
+  int32 game_id = 2;           // 玩家想玩的遊戲 (ex: 1001)
+}
+
+message GetRouteResponse {
+  string target_endpoint = 1;  // 目標服務地址 (ex: "10.0.1.5:9001")
+  routing.ServiceType type = 2;
+}
