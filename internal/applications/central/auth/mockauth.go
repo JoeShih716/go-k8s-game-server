@@ -8,13 +8,13 @@ import (
 )
 
 // MockAuthenticator 是一個測試用的驗證器
-type MockAuthenticator struct{
-	countID int
+type MockAuthenticator struct {
+	CountID int `json:"count_id"`
 }
 
 func NewMockAuthenticator() *MockAuthenticator {
 	return &MockAuthenticator{
-		countID : 1000000,
+		CountID: 1000000,
 	}
 }
 
@@ -26,10 +26,10 @@ func (m *MockAuthenticator) Verify(ctx context.Context, token string) (*domain.U
 
 	// 回傳 Mock User
 	// 注意: 這裡使用了 domain.User，符合依賴反轉原則
-	m.countID++
-	strID := strconv.Itoa(m.countID)
+	m.CountID++
+	strID := strconv.Itoa(m.CountID)
 	return &domain.User{
-		ID:       strID,
-		Name:    "MockPlayer-" + strID,
+		ID:   strID,
+		Name: "MockPlayer-" + strID,
 	}, nil
 }

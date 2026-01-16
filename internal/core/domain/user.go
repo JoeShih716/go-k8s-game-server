@@ -5,9 +5,7 @@ import (
 	"time"
 )
 
-var (
-	ErrInvalidToken = errors.New("invalid token")
-)
+var ErrInvalidToken = errors.New("invalid token")
 
 // User 代表系統中的一個使用者實體。
 // 這是最基礎的資料結構，用於在各個服務層之間傳遞使用者資訊。

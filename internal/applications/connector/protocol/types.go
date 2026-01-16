@@ -22,9 +22,9 @@ type Envelope struct {
 
 // Response 通用回應結構 (所有回應的外層包裝)
 type Response struct {
-	Action ConnectorProtocol `json:"action"`            // 對應的指令代碼
-	Data   any               `json:"data,omitempty"`    // 成功時的資料
-	Error  string            `json:"error,omitempty"`   // 失敗時的錯誤訊息
+	Action ConnectorProtocol `json:"action"`          // 對應的指令代碼
+	Data   any               `json:"data,omitempty"`  // 成功時的資料
+	Error  string            `json:"error,omitempty"` // 失敗時的錯誤訊息
 }
 
 // LoginReq 登入請求

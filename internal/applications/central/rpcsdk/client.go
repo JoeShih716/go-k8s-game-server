@@ -3,8 +3,9 @@ package rpcsdk
 import (
 	"context"
 
-	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"google.golang.org/grpc"
+
+	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 )
 
 // Client 封裝了 Connector 對 Central 的 RPC 呼叫

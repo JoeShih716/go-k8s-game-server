@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-
 	"time"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
@@ -16,7 +17,6 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/router"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
-	"github.com/shopspring/decimal"
 )
 
 // WebsocketHandler 實作 wss.Subscriber 介面，處理 WebSocket 事件

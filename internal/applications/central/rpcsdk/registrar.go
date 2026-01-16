@@ -5,8 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"google.golang.org/grpc"
+
+	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 )
 
 // Registrar 封裝了後端服務對 Central 的註冊與心跳邏輯

@@ -32,7 +32,6 @@ type Client struct {
 //	*Client: 封裝後的 Redis 客戶端實例
 //	error: 若連線失敗則回傳錯誤
 func NewClient(cfg Config) (*Client, error) {
-
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Addr,
 		Password: cfg.Password,

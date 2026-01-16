@@ -7,8 +7,7 @@ import (
 )
 
 // MockWallet 模擬錢包
-type MockWallet struct {
-}
+type MockWallet struct{}
 
 func NewMockWallet() *MockWallet {
 	return &MockWallet{}

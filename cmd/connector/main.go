@@ -8,6 +8,9 @@ import (
 	"os"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/handler"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/router"
@@ -15,8 +18,6 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
