@@ -19,15 +19,29 @@
 
 ## 2. 專案的 K8s 檔案結構 (`deploy/k8s/`)
 
-這些 `.yaml` 檔案是 K8s 的「設計圖」，告訴 K8s 要怎麼跑您的服務。
+為了簡化管理，我們將檔案分為「本地基礎建設」與「應用程式環境」：
 
-| 檔案 | 用途 | 重點內容 |
-| :--- | :--- | :--- |
-| **`central.yaml`** | 部署 **Central** 服務 | 定義了 `Deployment` (跑程式) 和 `Service` (讓別人連得到它:9003)。 |
-| **`connector.yaml`** | 部署 **Connector** 服務 | 定義了 `Deployment` (跑 2 個 Pod) 和 `Service` (對外開放 8080/8443)。 |
-| **`stateless-demo.yaml`** | 部署 **Demo** 遊戲邏輯 | 定義了 `Deployment` (跑 2 個 Pod)。**注意**: 這裡設定了 `imagePullPolicy: IfNotPresent`，所以本地更新時要用 restart。 |
-| **`redis.yaml`** | 部署 **Redis** 資料庫 | 中央狀態儲存。 |
-| **`mysql.yaml`** | 部署 **MySQL** 資料庫 | 持久化資料儲存。 |
+```text
+deploy/k8s/
+├── local-infra/            # [本地基礎建設] MySQL, Redis (本地開發才需要)
+│
+└── apps/                   # [應用程式]
+    ├── local/              # -> 本地開發環境 (Replicas=1, ENV=local_k8s)
+    └── prod/               # -> 正式環境 (Replicas=3, ENV=production)
+```
+
+### `deploy/k8s/apps/local/` (本地開發)
+| 檔案 | 用途 |
+| :--- | :--- |
+| **`central.yaml`** | 部署 **Central** 服務 |
+| **`connector.yaml`** | 部署 **Connector** 服務 |
+| **`stateless-demo.yaml`** | 部署 **Demo** 遊戲邏輯 |
+
+### `deploy/k8s/local-infra/` (本地 Infra)
+| 檔案 | 用途 |
+| :--- | :--- |
+| **`redis.yaml`** | 部署 **Redis** |
+| **`mysql.yaml`** | 部署 **MySQL** |
 
 ---
 
@@ -51,8 +65,14 @@ docker build -t game-server/central --build-arg SERVICE_PATH=cmd/central -f buil
 *有了新 Image 後，要讓 K8s 跑起來。*
 
 ```bash
-# 1. 首次部署 (或修改了 yaml 設定，如環境變數/Port)
-kubectl apply -f deploy/k8s/
+# 1. 首次部署 (本地開發)
+# 先跑基礎建設
+kubectl apply -f deploy/k8s/local-infra/
+# 再跑應用程式 (Local版)
+kubectl apply -f deploy/k8s/apps/local/
+
+# (若要部署到正式環境)
+# kubectl apply -f deploy/k8s/apps/prod/
 
 # 2. 熱更新 (只修改了程式碼，已 Build 好 Image)
 # 這會讓舊 Pod 變為 Terminating，新 Pod 變為 Running (Rolling Update)

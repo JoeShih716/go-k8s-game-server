@@ -2,7 +2,6 @@ package rpcsdk
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"google.golang.org/grpc"
@@ -22,17 +21,10 @@ func NewClient(conn *grpc.ClientConn) *Client {
 }
 
 // Login 呼叫 Central 進行登入
-func (c *Client) Login(ctx context.Context, token string) (string, error) {
-	resp, err := c.cli.Login(ctx, &proto.LoginRequest{
+func (c *Client) Login(ctx context.Context, token string) (*proto.LoginResponse, error) {
+	return c.cli.Login(ctx, &proto.LoginRequest{
 		Token: token,
 	})
-	if err != nil {
-		return "", err
-	}
-	if !resp.Success {
-		return "", fmt.Errorf("login failed: %s", resp.ErrorMessage)
-	}
-	return resp.UserId, nil
 }
 
 // GetRoute 呼叫 Central 取得路由

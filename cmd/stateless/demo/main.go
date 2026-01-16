@@ -14,9 +14,9 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/rpcsdk"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
+	demo "github.com/JoeShih716/go-k8s-game-server/internal/applications/stateless-demo"
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
-	"github.com/JoeShih716/go-k8s-game-server/internal/stateless/demo"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	// 2. 讀取 Config
-	env := os.Getenv("APP_ENV")
+	env := os.Getenv(config.EnvAppEnv)
 	if env == "" {
 		env = "local"
 	}
@@ -35,7 +35,7 @@ func main() {
 	}
 
 	port := "9001"
-	if p := os.Getenv("PORT"); p != "" {
+	if p := os.Getenv(config.EnvPort); p != "" {
 		port = p
 	}
 
@@ -44,7 +44,7 @@ func main() {
 	// 3. 啟動 Service Registrar (自動註冊)
 	// 優先使用 POD_IP (K8s Downward API)，若無則 fallback 到 DNS 名稱 (Docker Compose)
 	host := "stateless-demo"
-	if podIP := os.Getenv("POD_IP"); podIP != "" {
+	if podIP := os.Getenv(config.EnvPodIP); podIP != "" {
 		host = podIP
 	}
 	myEndpoint := fmt.Sprintf("%s:%s", host, port)

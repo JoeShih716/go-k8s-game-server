@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connector
+  labels:
+    app: connector
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: connector
+  template:
+    metadata:
+      labels:
+        app: connector
+    spec:
+      containers:
+      - name: connector
+        image: game-server/connector:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: APP_ENV
+          value: "production"
+        - name: CENTRAL_ADDR
+          value: "central:9003"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connector
+spec:
+  type: LoadBalancer # 或者 NodePort，取決於本地環境 (Docker Desktop 支援 LB)
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: connector

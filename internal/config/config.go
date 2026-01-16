@@ -76,12 +76,27 @@ func Load(env string, configPath ...string) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse yaml: %w", err)
 	}
 
-	// 允許環境變數覆蓋 (簡單實作: 對於密碼等敏感資訊)
-	if p := os.Getenv("MYSQL_PASSWORD"); p != "" {
+	// 允許環境變數覆蓋配置 (Priority: Env Vars > Config File)
+	if p := os.Getenv(EnvMySQLPassword); p != "" {
 		cfg.MySQL.Password = p
 	}
-	if p := os.Getenv("REDIS_PASSWORD"); p != "" {
+	if h := os.Getenv(EnvMySQLHost); h != "" {
+		cfg.MySQL.Host = h
+	}
+
+	if p := os.Getenv(EnvRedisPassword); p != "" {
 		cfg.Redis.Password = p
+	}
+	if addr := os.Getenv(EnvRedisAddr); addr != "" {
+		cfg.Redis.Addr = addr
+	}
+
+	// 支援覆蓋 Services 地址 (例如讓 K8s 可以動態指定 Central 位置)
+	if addr := os.Getenv(EnvCentralAddr); addr != "" {
+		if cfg.Services == nil {
+			cfg.Services = make(map[string]string)
+		}
+		cfg.Services["central"] = addr
 	}
 
 	return &cfg, nil

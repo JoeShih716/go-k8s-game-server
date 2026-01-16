@@ -9,13 +9,14 @@ import (
 	"time"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/rpcsdk"
-	"github.com/JoeShih716/go-k8s-game-server/internal/connector/protocol"
-	"github.com/JoeShih716/go-k8s-game-server/internal/connector/session"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/protocol"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/router"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
+	"github.com/shopspring/decimal"
 )
 
 // WebsocketHandler 實作 wss.Subscriber 介面，處理 WebSocket 事件
@@ -152,7 +153,7 @@ func (h *WebsocketHandler) handleLogin(ctx context.Context, conn wss.Client, pay
 	loginCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	userID, err := h.centralClient.Login(loginCtx, req.Token)
+	resp, err := h.centralClient.Login(loginCtx, req.Token)
 	if err != nil {
 		slog.Error("Login failed", "error", err)
 		h.sendError(conn, protocol.ActionLogin, "Authentication Failed")
@@ -162,13 +163,15 @@ func (h *WebsocketHandler) handleLogin(ctx context.Context, conn wss.Client, pay
 	}
 
 	// 登入成功，綁定 Session
-	conn.SetTag("user_id", userID)
-	slog.Info("User Logged In", "userID", userID)
+	conn.SetTag("user_id", resp.UserId)
+	slog.Info("User Logged In", "userID", resp.UserId)
 
+	balance, _ := decimal.NewFromString(resp.Balance)
 	h.sendResponse(conn, protocol.ActionLogin, protocol.LoginResp{
 		Success:  true,
-		UserID:   userID,
-		Nickname: "Player-" + userID[:8], // Mock Nickname
+		UserID:   resp.UserId,
+		Nickname: resp.Nickname,
+		Balance:  balance,
 	})
 
 	// 啟動 Enter Game Timer (3分鐘)

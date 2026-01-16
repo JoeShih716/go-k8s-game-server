@@ -91,8 +91,11 @@ docker build -t game-server/central --build-arg SERVICE_PATH=cmd/central -f buil
 docker build -t game-server/connector --build-arg SERVICE_PATH=cmd/connector -f build/package/Dockerfile.localk8s .
 docker build -t game-server/demo --build-arg SERVICE_PATH=cmd/stateless/demo -f build/package/Dockerfile.localk8s .
 
-# 2. 部署到 Kubernetes (包含 MySQL, Redis, Services)
-kubectl apply -f deploy/k8s/
+# 2. 部署到 Kubernetes
+# (1) 部署基礎建設
+kubectl apply -f deploy/k8s/local-infra/
+# (2) 部署應用程式 (本地版)
+kubectl apply -f deploy/k8s/apps/local/
 ```
 
 ### 2. 日常開發流程 (Daily Workflow)
@@ -135,6 +138,9 @@ kubectl apply -f deploy/k8s/
 若要刪除所有部署的服務 (包含 Pods, Services, ConfigMaps 等)，主要用於重置環境或釋放資源：
 
 ```bash
-kubectl delete -f deploy/k8s/
+# 清理應用
+kubectl delete -f deploy/k8s/apps/local/
+# 清理基礎建設
+kubectl delete -f deploy/k8s/local-infra/
 ```
 這只會刪除 K8s 資源，不會刪除 Docker Images。若要連同 Image 一起清理，可額外執行 `docker rmi`。

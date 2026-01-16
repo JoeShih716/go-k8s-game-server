@@ -34,7 +34,7 @@ func (h *Handler) Call(ctx context.Context, req *proto.GameRequest) (*proto.Game
 
 	echo := echoResponse{
 		Host:    h.host,
-		Payload: "Hello Echo",
+		Payload: "Hello Echo!!!!12345",
 	}
 	jsonBytes, err := json.Marshal(echo)
 	if err != nil {

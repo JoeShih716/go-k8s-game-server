@@ -1,6 +1,10 @@
 package protocol
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/shopspring/decimal"
+)
 
 // ConnectorProtocol 定義指令代碼 (使用 string 方便前端對接)
 type ConnectorProtocol string
@@ -30,10 +34,11 @@ type LoginReq struct {
 
 // LoginResp 登入回應
 type LoginResp struct {
-	Success      bool   `json:"success"`
-	ErrorMessage string `json:"error_message,omitempty"`
-	UserID       string `json:"user_id"`
-	Nickname     string `json:"nickname"`
+	Success      bool            `json:"success"`
+	ErrorMessage string          `json:"error_message,omitempty"`
+	UserID       string          `json:"user_id"`
+	Nickname     string          `json:"nickname"`
+	Balance      decimal.Decimal `json:"balance"`
 }
 
 // EnterGameReq 進入遊戲請求

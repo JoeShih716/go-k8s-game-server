@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stateless-demo
+  labels:
+    app: stateless-demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: stateless-demo
+  template:
+    metadata:
+      labels:
+        app: stateless-demo
+    spec:
+      containers:
+      - name: demo
+        image: game-server/demo:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9001
+        env:
+        - name: APP_ENV
+          value: "production"
+        - name: CENTRAL_ADDR
+          value: "central:9003"
+        # 關鍵：注入 Pod IP，讓 Demo 能跟 Central 註冊自己的內網 IP
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP

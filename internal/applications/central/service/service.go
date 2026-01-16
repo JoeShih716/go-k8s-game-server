@@ -6,9 +6,9 @@ import (
 	"log/slog"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/auth"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/registry"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/wallet"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/auth"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/registry"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/wallet"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/mysql"
 )
 
@@ -96,7 +96,7 @@ func (h *Service) Login(ctx context.Context, req *proto.LoginRequest) (*proto.Lo
 		Success:      true,
 		UserId:       user.ID,
 		Nickname:     user.Name,
-		Balance:      balance,
+		Balance:      balance.String(),
 		ErrorMessage: "",
 	}, nil
 }

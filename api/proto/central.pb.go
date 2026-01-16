@@ -375,7 +375,7 @@ type LoginResponse struct {
 	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // 驗證成功後回傳 UserID
 	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`           // 暱稱
-	Balance       int64                  `protobuf:"varint,5,opt,name=balance,proto3" json:"balance,omitempty"`            // 餘額
+	Balance       string                 `protobuf:"bytes,5,opt,name=balance,proto3" json:"balance,omitempty"`             // 餘額 (Decimal string)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -438,11 +438,11 @@ func (x *LoginResponse) GetNickname() string {
 	return ""
 }
 
-func (x *LoginResponse) GetBalance() int64 {
+func (x *LoginResponse) GetBalance() string {
 	if x != nil {
 		return x.Balance
 	}
-	return 0
+	return ""
 }
 
 type GetRouteRequest struct {
@@ -579,7 +579,7 @@ const file_api_proto_central_proto_rawDesc = "" +
 	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12\x17\n" +
 	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1a\n" +
 	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x18\n" +
-	"\abalance\x18\x05 \x01(\x03R\abalance\"C\n" +
+	"\abalance\x18\x05 \x01(\tR\abalance\"C\n" +
 	"\x0fGetRouteRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\agame_id\x18\x02 \x01(\x05R\x06gameId\"e\n" +

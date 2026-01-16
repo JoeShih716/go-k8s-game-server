@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/rpcsdk"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
 )
 
 // ErrServiceNotFound 表示找不到請求的服務

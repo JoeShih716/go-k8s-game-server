@@ -75,7 +75,7 @@ message LoginResponse {
   string error_message = 2;
   string user_id = 3;          // 驗證成功後回傳 UserID
   string nickname = 4;         // 暱稱
-  int64 balance = 5;           // 餘額
+  string balance = 5;           // 餘額 (Decimal string)
 }
 
 message GetRouteRequest {

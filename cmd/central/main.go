@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/auth"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/registry"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/service"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/wallet"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/auth"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/registry"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/service"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/wallet"
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/mysql"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/redis"
@@ -27,7 +27,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	// 2. 讀取 Config
-	env := os.Getenv("APP_ENV")
+	env := os.Getenv(config.EnvAppEnv)
 	if env == "" {
 		env = "local"
 	}
@@ -79,7 +79,7 @@ func main() {
 	// Central 固定跑在 9003 (參考 config/local.yaml)
 	// 在 K8s 中通常也是開這 port
 	port := "9003"
-	if p := os.Getenv("PORT"); p != "" {
+	if p := os.Getenv(config.EnvPort); p != "" {
 		port = p
 	}
 

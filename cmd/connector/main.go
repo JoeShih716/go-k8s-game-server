@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/rpcsdk"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/handler"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/router"
+	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
-	"github.com/JoeShih716/go-k8s-game-server/internal/connector/handler"
-	"github.com/JoeShih716/go-k8s-game-server/internal/connector/router"
-	"github.com/JoeShih716/go-k8s-game-server/internal/connector/session"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 	"google.golang.org/grpc"
@@ -25,7 +25,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	// 2. 讀取設定
-	env := os.Getenv("APP_ENV")
+	env := os.Getenv(config.EnvAppEnv)
 	if env == "" {
 		env = "local"
 	}
