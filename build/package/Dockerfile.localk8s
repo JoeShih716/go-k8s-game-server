@@ -1,0 +1,41 @@
+# Build Stage
+FROM golang:1.25-alpine AS builder
+
+# 設定工作目錄
+WORKDIR /app
+
+# 安裝基礎建置工具
+RUN apk add --no-cache git make
+
+# 複製依賴描述檔並下載
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 複製所有原始碼
+COPY . .
+
+# 定義建置參數 (必須由 docker build --build-arg SERVICE_PATH=... 傳入)
+# 例如: cmd/central, cmd/connector, cmd/stateless/demo
+ARG SERVICE_PATH
+RUN if [ -z "$SERVICE_PATH" ]; then echo "SERVICE_PATH argument is required"; exit 1; fi
+
+# 編譯目標二進制檔
+# -o /app/server: 輸出的 binary 統一命名為 server
+# ./$SERVICE_PATH: 建置指定的 main 套件
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/server ./$SERVICE_PATH
+
+# Runtime Stage
+FROM alpine:latest
+
+# 安裝基礎憑證 (如果是 HTTPS 連線需要)
+RUN apk --no-cache add ca-certificates tzdata
+
+WORKDIR /root/
+
+# 從 Builder 把編譯好的程式複製過來
+COPY --from=builder /app/server .
+# 複製設定檔目錄 (Runtime 需要讀取 yaml)
+COPY --from=builder /app/config ./config
+
+# 預設啟動指令
+CMD ["./server"]

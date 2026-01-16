@@ -39,7 +39,7 @@ services:
   connector:
     build:
       context: .
-      dockerfile: build/package/Dockerfile.dev
+      dockerfile: build/package/Dockerfile.local
     container_name: game-connector
     ports:
       - "8080:8080"
@@ -56,7 +56,7 @@ services:
   stateless-demo:
     build:
       context: .
-      dockerfile: build/package/Dockerfile.dev
+      dockerfile: build/package/Dockerfile.local
     container_name: game-stateless-demo
     environment:
       - APP_ENV=local
@@ -74,7 +74,7 @@ services:
   central:
     build:
       context: .
-      dockerfile: build/package/Dockerfile.dev
+      dockerfile: build/package/Dockerfile.local
     container_name: game-central
     environment:
       - APP_ENV=local

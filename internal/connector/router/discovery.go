@@ -18,7 +18,7 @@ var ErrServiceNotFound = errors.New("service not found")
 // 負責根據服務名稱和類型查找可用的服務實例地址
 type Discovery interface {
 	// GetServiceAddr 根據服務名稱取得地址 (Metadata 可選，用於進階路由如 Consistent Hash or Central GetRoute)
-	GetServiceAddr(ctx context.Context, serviceName string, metadata *proto.RoutingMetadata) (string, error)
+	GetServiceAddr(ctx context.Context, serviceName string, metadata *proto.RoutingMetadata) (string, proto.ServiceType, error)
 }
 
 // StaticDiscovery 靜態服務發現實作 (讀取 Config)
@@ -35,15 +35,15 @@ func NewStaticDiscovery(services map[string]string) *StaticDiscovery {
 }
 
 // GetServiceAddr 實作 Discovery 介面
-func (d *StaticDiscovery) GetServiceAddr(ctx context.Context, serviceName string, metadata *proto.RoutingMetadata) (string, error) {
+func (d *StaticDiscovery) GetServiceAddr(ctx context.Context, serviceName string, metadata *proto.RoutingMetadata) (string, proto.ServiceType, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
 	addr, ok := d.services[serviceName]
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrServiceNotFound, serviceName)
+		return "", proto.ServiceType_UNKNOWN_SERVICE, fmt.Errorf("%w: %s", ErrServiceNotFound, serviceName)
 	}
-	return addr, nil
+	return addr, proto.ServiceType_UNKNOWN_SERVICE, nil
 }
 
 // CentralDiscovery 基於 Central Service 的動態發現實作
@@ -57,7 +57,7 @@ func NewCentralDiscovery(client *rpcsdk.Client) *CentralDiscovery {
 	}
 }
 
-func (d *CentralDiscovery) GetServiceAddr(ctx context.Context, serviceName string, metadata *proto.RoutingMetadata) (string, error) {
+func (d *CentralDiscovery) GetServiceAddr(ctx context.Context, serviceName string, metadata *proto.RoutingMetadata) (string, proto.ServiceType, error) {
 	// 嘗試從 Metadata 取得 GameID (如果有的話)
 	// 假設 Tags["game_id"] 存放 GameID
 	if metadata != nil && metadata.Tags != nil {
@@ -76,5 +76,5 @@ func (d *CentralDiscovery) GetServiceAddr(ctx context.Context, serviceName strin
 	// 或者我們可以實作另一個 RPC GetService(serviceName)
 	// 目前 Assume Dynamic Routing 都是基於 GameID
 
-	return "", fmt.Errorf("central discovery requires game_id in metadata")
+	return "", proto.ServiceType_UNKNOWN_SERVICE, fmt.Errorf("central discovery requires game_id in metadata")
 }

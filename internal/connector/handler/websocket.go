@@ -90,12 +90,36 @@ func (h *WebsocketHandler) OnMessage(conn wss.Client, msg []byte) {
 	}
 
 	// 3. 轉發邏輯 (Forwarding)
-	// 若非本地指令，且已在遊戲中 (有路由)，則轉發給後端
+	// A. Sticky Routing (Stateful): 若已有固定路由，直接轉發
 	if target, ok := conn.GetTag("target_endpoint"); ok {
 		if endpoint, ok := target.(string); ok && endpoint != "" {
 			h.forwardToBackend(ctx, conn, endpoint, msg)
 			return
 		}
+	}
+
+	// B. Round-Robin Routing (Stateless): 若無固定路由，但已在遊戲中，重新查詢
+	if gameIDStr, ok := conn.GetTag("current_game_id"); ok {
+		// 這裡可以做進一步檢查 service_type，但基本上只要沒 target_endpoint 且有 gameID 就是 Stateless
+		// 重新向 Central 詢問路由 (實現 Packet-Level Load Balancing)
+		// 注意: 這會增加 Central 的負載，生產環境可用本地快取列表優化
+		userID := h.getUserID(conn)
+		var gameID int
+		if _, err := fmt.Sscanf(gameIDStr.(string), "%d", &gameID); err != nil {
+			slog.Error("Failed to parse gameID from session", "game_id_str", gameIDStr)
+			return
+		}
+
+		// 快速 GetRoute
+		routeCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+		endpoint, _, err := h.centralClient.GetRoute(routeCtx, userID, int32(gameID))
+		cancel()
+
+		if err == nil && endpoint != "" {
+			h.forwardToBackend(ctx, conn, endpoint, msg)
+			return
+		}
+		slog.Warn("Failed to resolve route for stateless game", "error", err)
 	}
 
 	// 4. 未知指令或未入桌
@@ -183,7 +207,7 @@ func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client,
 	routeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	endpoint, err := h.centralClient.GetRoute(routeCtx, userID, req.GameID)
+	endpoint, serviceType, err := h.centralClient.GetRoute(routeCtx, userID, req.GameID)
 	// Central 會處理 10000 邏輯，若 error 代表不合法或 demo 以外
 	if err != nil {
 		slog.Error("GetRoute failed", "game_id", req.GameID, "error", err)
@@ -193,9 +217,15 @@ func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client,
 
 	// 緩存路由資訊到 Session (Tag)
 	conn.SetTag("current_game_id", fmt.Sprintf("%d", req.GameID))
-	conn.SetTag("target_endpoint", endpoint)
+	conn.SetTag("service_type", serviceType) // 記錄服務類型
 
-	slog.Info("Enter Game Success", "userID", userID, "gameID", req.GameID, "target", endpoint)
+	// 關鍵差異: 只有 STATEFUL 服務才需要 Sticky Session (固定連線)
+	// STATELESS 服務則是每次請求都重新 GetRoute (Round-Robin)
+	if serviceType == proto.ServiceType_STATEFUL {
+		conn.SetTag("target_endpoint", endpoint)
+	}
+
+	slog.Info("Enter Game Success", "userID", userID, "gameID", req.GameID, "target", endpoint, "type", serviceType)
 
 	h.sendResponse(conn, protocol.ActionEnterGame, protocol.EnterGameResp{
 		Success: true,

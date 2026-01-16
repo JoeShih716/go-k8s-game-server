@@ -76,3 +76,65 @@ go-k8s-game-server/
 - [Redis](pkg/redis/README.md): 支援泛型存取、分散式鎖與自動重試。
 - [gRPC](pkg/grpc/README.md): 高效能 gRPC 連線池 (Client Pool)。
 - [WebSocket](pkg/wss/README.md): 內建 Hub 模式與安全防護的 WebSocket 框架。
+
+## 本地 Kubernetes 開發環境 (Local K8s)
+
+除了一般的 Docker Compose，本專案也支援本地 Kubernetes (如 via Orbstack, Docker Desktop, Kind) 部署。
+
+### 1. 初次部署 (Initial Setup)
+
+若您是第一次啟動 K8s 環境，請執行以下步驟建置所有基礎映像檔並部署：
+
+```bash
+# 1. 建置所有服務映像檔
+docker build -t game-server/central --build-arg SERVICE_PATH=cmd/central -f build/package/Dockerfile.localk8s .
+docker build -t game-server/connector --build-arg SERVICE_PATH=cmd/connector -f build/package/Dockerfile.localk8s .
+docker build -t game-server/demo --build-arg SERVICE_PATH=cmd/stateless/demo -f build/package/Dockerfile.localk8s .
+
+# 2. 部署到 Kubernetes (包含 MySQL, Redis, Services)
+kubectl apply -f deploy/k8s/
+```
+
+### 2. 日常開發流程 (Daily Workflow)
+
+與 Docker Compose 不同，K8s 部署**不會**自動監測檔案變更。開發流程如下：
+
+1. **修改程式碼** (e.g. `handler.go`)
+2. **建置映像檔 (Build Images)**:
+    ```bash
+    # 使用專用的 localk8s Dockerfile，將 Config 封裝進去
+    docker build -t game-server/demo --build-arg SERVICE_PATH=cmd/stateless/demo -f build/package/Dockerfile.localk8s .
+    ```
+3. **滾動更新 (Rollout Restart)**:
+    ```bash
+    # 通知 K8s 使用新映像檔重啟 Pod
+    kubectl rollout restart deployment/stateless-demo
+    ```
+4. **驗證**: 使用 `kubectl get pods` 觀察狀態。
+
+### 2. 架構設計：客戶端負載平衡 (Client-Side Load Balancing)
+
+在本專案的 K8s 部署中，我們對於 **gRPC** 通訊採取了特殊的路由策略：
+
+*   **Stateless 服務 (Demo)**：
+    *   **不使用 Kubernetes ClusterIP (Service IP)** 做核心路由。因為 ClusterIP 是 L4 Load Balancer，無法對長連線 (gRPC/HTTP2) 做 Request-Level 的負載平衡 (會導致 Sticky Connection 問題)。
+    *   **採用 Client-Side Round-Robin**：
+        1.  服務啟動時，透過 Downward API 獲取自身 **Pod IP**，並註冊到 Central (Redis)。
+        2.  Connector (Client) 從 Central 獲取可用 Pod IP 列表。
+        3.  Connector 自行維護連線池 (`grpcPool`)，並對 Stateless 請求實作 **Packet-Level Round-Robin** (意即：每一個封包都重新選擇一個 Pod IP)。
+
+*   **Stateful 服務 (Sticky)**：
+    *   維持 **Sticky Session** 機制。Connector 在玩家 `Login/Enter` 後鎖定特定 Pod IP，後續訊息固定轉發，確保狀態一致。
+
+這種設計讓我們不需引入 Istio 等重型 Service Mesh，即可在 Go 應用層實現高效、靈活的 gRPC 負載平衡。
+
+> 詳細操作指令請參閱 [Docs: Kubernetes 開發指南](docs/K8S_GUIDE.md)
+
+### 3. 清理環境 (Clean Up)
+
+若要刪除所有部署的服務 (包含 Pods, Services, ConfigMaps 等)，主要用於重置環境或釋放資源：
+
+```bash
+kubectl delete -f deploy/k8s/
+```
+這只會刪除 K8s 資源，不會刪除 Docker Images。若要連同 Image 一起清理，可額外執行 `docker rmi`。

@@ -1,0 +1,30 @@
+app:
+  port: 8080 # Default port (will be overridden or used as base)
+
+services:
+  # 在 K8s 中，使用 Service DNS
+  central: "central:9003"
+  # Demo 和 Connector 會使用環境變數或這些預設值
+
+redis:
+  addr: "redis:6379"
+  # User/Password omitted for local dev
+
+mysql:
+  host: "mysql"
+  port: 3306
+  user: "root"
+  password: "password"
+  name: "game_db"
+
+wss:
+  path: "/ws"
+  allowed_origins: ["*"]
+  read_buffer_size: 1024
+  write_buffer_size: 1024
+  write_wait_sec: 10
+  pong_wait_sec: 60
+  max_message_size: 4096
+
+central:
+  registry_ttl_sec: 10

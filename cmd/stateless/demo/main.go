@@ -42,9 +42,12 @@ func main() {
 	slog.Info("Starting Stateless Demo Service...", "port", port)
 
 	// 3. 啟動 Service Registrar (自動註冊)
-	// 此處 endpoint 不應該寫死 localhost，應該是外部可訪問的 IP (K8s Service DNS)
-	// 在 Docker Compose 中，這台機器的名字叫 "stateless-demo"
-	myEndpoint := fmt.Sprintf("stateless-demo:%s", port)
+	// 優先使用 POD_IP (K8s Downward API)，若無則 fallback 到 DNS 名稱 (Docker Compose)
+	host := "stateless-demo"
+	if podIP := os.Getenv("POD_IP"); podIP != "" {
+		host = podIP
+	}
+	myEndpoint := fmt.Sprintf("%s:%s", host, port)
 
 	// 從 config 取得 Central 地址
 	central := cfg.Services["central"]
@@ -91,7 +94,7 @@ func main() {
 
 	// 5. 註冊 gRPC 服務
 	grpcServer := grpc.NewServer()
-	demoHandler := demo.NewHandler()
+	demoHandler := demo.NewHandler(host)
 	proto.RegisterGameServiceServer(grpcServer, demoHandler)
 
 	// 啟用 gRPC Reflection

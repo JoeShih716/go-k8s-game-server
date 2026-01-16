@@ -52,7 +52,7 @@ func (r *SmartRouter) Route(ctx context.Context, metadata *proto.RoutingMetadata
 	}
 
 	// 查詢 Discovery
-	addr, err := r.discovery.GetServiceAddr(ctx, serviceName, metadata)
+	addr, _, err := r.discovery.GetServiceAddr(ctx, serviceName, metadata)
 	if err != nil {
 		return "", err
 	}

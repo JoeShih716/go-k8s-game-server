@@ -36,13 +36,13 @@ func (c *Client) Login(ctx context.Context, token string) (string, error) {
 }
 
 // GetRoute 呼叫 Central 取得路由
-func (c *Client) GetRoute(ctx context.Context, userID string, gameID int32) (string, error) {
+func (c *Client) GetRoute(ctx context.Context, userID string, gameID int32) (string, proto.ServiceType, error) {
 	resp, err := c.cli.GetRoute(ctx, &proto.GetRouteRequest{
 		UserId: userID,
 		GameId: gameID,
 	})
 	if err != nil {
-		return "", err
+		return "", proto.ServiceType_UNKNOWN_SERVICE, err
 	}
-	return resp.TargetEndpoint, nil
+	return resp.TargetEndpoint, resp.Type, nil
 }
