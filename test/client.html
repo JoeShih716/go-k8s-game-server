@@ -1,48 +1,292 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Server WebSocket Tester</title>
+    <title>Game Server Client (Refined)</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f5f5f7; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .status { padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; }
-        .status.connected { background: #e3f9e5; color: #1f7a1f; }
-        .status.disconnected { background: #ffebee; color: #c62828; }
-        .input-group { margin: 15px 0; display: flex; gap: 10px; }
-        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        button { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button.primary { background: #007aff; color: white; }
-        button.primary:hover { background: #0056b3; }
-        button.danger { background: #ff3b30; color: white; }
-        #log { height: 400px; overflow-y: auto; background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 8px; font-family: monospace; margin-top: 20px; font-size: 14px; }
-        .msg-sent { color: #f0f0f0; }
-        .msg-recv { color: #00ff00; }
-        .msg-sys { color: #ffeb3b; }
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: #495057;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-weight: 600;
+            min-width: 80px;
+            display: inline-block;
+        }
+
+        input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            flex-grow: 1;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        button:hover {
+            filter: brightness(95%);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-outline {
+            background-color: white;
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .btn-outline:hover {
+            background-color: #f1f1f1;
+        }
+
+        .template-bar {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: "Menlo", "Consolas", monospace;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            resize: vertical;
+            background: #fafafa;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        #log {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f1f1;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-sys {
+            color: #856404;
+            background-color: #fff3cd;
+        }
+
+        .log-sent {
+            color: #004085;
+            background-color: #cce5ff;
+        }
+
+        .log-recv {
+            color: #155724;
+            background-color: #d4edda;
+        }
+
+        .log-err {
+            color: #721c24;
+            background-color: #f8d7da;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        details summary {
+            cursor: pointer;
+            color: #666;
+        }
+
+        pre {
+            margin: 5px 0 0 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .input-inline {
+            width: 120px;
+            padding: 6px;
+            font-size: 0.9rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
     </style>
 </head>
+
 <body>
+
     <div class="container">
-        <h1>🎮 Game Server Tester</h1>
+        <h1>🎮 Game Server Test Client</h1>
 
-        <div class="input-group">
-            <input type="text" id="wsUrl" value="ws://localhost:8080/ws" placeholder="WebSocket URL">
-            <button id="btnConnect" class="primary" onclick="connect()">連線</button>
-            <button id="btnDisconnect" class="danger" onclick="disconnect()" disabled>斷線</button>
-            <span id="statusBadge" class="status disconnected">Disconnected</span>
+        <!-- 1. 連線設定 -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h2>Connection</h2>
+                <span id="statusBadge" class="status-badge status-disconnected">Disconnected</span>
+            </div>
+
+            <div class="row">
+                <label>WS URL:</label>
+                <input type="text" id="wsUrl" value="ws://localhost:8080/ws">
+            </div>
+
+            <div class="row">
+                <button id="btnConnect" class="btn-primary" onclick="connect()">Connect</button>
+                <button id="btnDisconnect" class="btn-danger" onclick="disconnect()" disabled>Disconnect</button>
+            </div>
         </div>
 
-        <div class="input-group">
-            <select id="serviceType">
-                <option value="1">Stateless (Demo)</option>
-                <option value="2">Stateful (Fishing)</option>
-            </select>
-            <input type="text" id="payloadInput" placeholder="Payload (e.g. valid-token)" onkeypress="if(event.key === 'Enter') send()" value="test-payload">
-            <button class="primary" onclick="send()" id="btnSend" disabled>發送 (JSON)</button>
+        <!-- 2. 訊息發送 -->
+        <div class="card">
+            <h2>Message Payload</h2>
+
+            <!-- Base64 Helper -->
+            <div class="row" style="background:#f8f9fa; padding:10px; border-radius:4px;">
+                <label>Token Gen:</label>
+                <input type="text" id="base64Input"
+                    placeholder="Paste Base64 or Token here to auto-fill Login Template...">
+            </div>
+
+            <div class="template-bar">
+                <strong>Templates:</strong>
+                <button class="btn-outline" onclick="applyTemplate('login')">Login (Auth)</button>
+
+                <div style="border-left: 1px solid #ccc;  margin: 0 10px; height: 20px;"></div>
+
+                <label style="min-width:auto; margin-right:5px;">Game ID:</label>
+                <input type="number" id="gameIDInput" class="input-inline" value="10000">
+                <button class="btn-outline" onclick="applyTemplate('enter')">Enter Game</button>
+
+                <div style="border-left: 1px solid #ccc; margin: 0 10px; height: 20px;"></div>
+
+                <button class="btn-outline" onclick="applyTemplate('echo')">Echo Test</button>
+            </div>
+
+            <textarea id="payloadArea" rows="12" placeholder='{ "action": "...", "payload": ... }'></textarea>
+
+            <div class="row" style="margin-top:15px; justify-content:flex-end;">
+                <button id="btnSend" class="btn-primary" onclick="send()" disabled style="width:120px;">Send
+                    JSON</button>
+            </div>
         </div>
 
-        <div id="log"></div>
+        <!-- 3. 日誌 -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Traffic Log</h2>
+                <button class="btn-outline" onclick="document.getElementById('log').innerHTML=''"
+                    style="font-size:0.8rem; padding:4px 8px;">Clear</button>
+            </div>
+            <div id="log"></div>
+        </div>
     </div>
 
     <script>
@@ -52,49 +296,93 @@
         const btnConnect = document.getElementById('btnConnect');
         const btnDisconnect = document.getElementById('btnDisconnect');
         const btnSend = document.getElementById('btnSend');
+        const payloadArea = document.getElementById('payloadArea');
+        const base64Input = document.getElementById('base64Input');
+        const gameIDInput = document.getElementById('gameIDInput');
+
+        // --- Templates ---
+        const templates = {
+            login: {
+                action: "login",
+                payload: { token: "default-test-token" }
+            },
+            enter: {
+                action: "enter",
+                payload: { game_id: 10000 }
+            },
+            echo: {
+                action: "echo",
+                payload: { message: "Hello World" }
+            }
+        };
+
+        function applyTemplate(type) {
+            let data = JSON.parse(JSON.stringify(templates[type])); // Deep copy
+
+            // 1. Login Template 自動填入 Token
+            if (type === 'login' && base64Input.value.trim()) {
+                try {
+                    const val = base64Input.value.trim();
+                    // 這裡簡化邏輯：直接把 input 值當作 token
+                    data.payload.token = val;
+                } catch (e) { }
+            }
+
+            // 2. Enter Game Template 自動填入 GameID
+            if (type === 'enter') {
+                const gid = parseInt(gameIDInput.value);
+                if (!isNaN(gid)) {
+                    data.payload.game_id = gid;
+                }
+            }
+
+            payloadArea.value = JSON.stringify(data, null, 4);
+        }
+
+        // --- WebSocket Logic ---
 
         function connect() {
             const url = document.getElementById('wsUrl').value;
-            ws = new WebSocket(url);
+            try {
+                ws = new WebSocket(url);
 
-            ws.onopen = () => {
-                updateStatus(true);
-                logMsg('System', 'Connected to ' + url, 'msg-sys');
-            };
+                ws.onopen = () => {
+                    updateStatus(true);
+                    appendLog('System', `Connected to ${url}`, 'log-sys');
+                };
 
-            ws.onclose = (event) => {
-                updateStatus(false);
-                logMsg('System', `Disconnected (Code: ${event.code})`, 'msg-sys');
-            };
+                ws.onclose = (evt) => {
+                    updateStatus(false);
+                    appendLog('System', `Disconnected. Code: ${evt.code}`, 'log-sys');
+                };
 
-            ws.onerror = (error) => {
-                logMsg('System', 'Error detected', 'msg-sys');
-                // console.error(error);
-            };
+                ws.onerror = (err) => {
+                    appendLog('System', 'WebSocket Error', 'log-err');
+                };
 
-            ws.onmessage = (event) => {
-                logMsg('Server', event.data, 'msg-recv');
-            };
-        }
-
-        function disconnect() {
-            if (ws) {
-                ws.close();
+                ws.onmessage = (evt) => {
+                    appendLog('Server', evt.data, 'log-recv');
+                };
+            } catch (e) {
+                alert("Connect failed: " + e.message);
             }
         }
 
-        function send() {
-            const serviceType = parseInt(document.getElementById('serviceType').value);
-            const payload = document.getElementById('payloadInput').value;
+        function disconnect() {
+            if (ws) ws.close();
+        }
 
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                const msg = {
-                    service_type: serviceType,
-                    payload: payload
-                };
-                const jsonStr = JSON.stringify(msg);
-                ws.send(jsonStr);
-                logMsg('You', jsonStr, 'msg-sent');
+        function send() {
+            const content = payloadArea.value.trim();
+            if (!content) return;
+
+            try {
+                // 驗證 JSON 格式
+                JSON.parse(content);
+                ws.send(content);
+                appendLog('Client', content, 'log-sent');
+            } catch (e) {
+                alert("Invalid JSON format!");
             }
         }
 
@@ -104,18 +392,40 @@
             btnDisconnect.disabled = !connected;
             btnSend.disabled = !connected;
 
-            statusBadge.className = 'status ' + (connected ? 'connected' : 'disconnected');
-            statusBadge.textContent = connected ? 'Connected' : 'Disconnected';
+            statusBadge.className = 'status-badge ' + (connected ? 'status-connected' : 'status-disconnected');
+            statusBadge.innerText = connected ? 'Connected' : 'Disconnected';
         }
 
-        function logMsg(source, msg, cls) {
+        function appendLog(source, msg, className) {
             const div = document.createElement('div');
+            div.className = `log-entry ${className}`;
+
             const time = new Date().toLocaleTimeString();
-            div.className = cls;
-            div.innerHTML = `[${time}] <strong>${source}:</strong> ${msg}`;
+            let html = `<strong>[${time}] ${source}:</strong> `;
+
+            // 嘗試 Pretty Print JSON
+            try {
+                const obj = JSON.parse(msg);
+                const summary = (obj.action ? `Action: ${obj.action}` : 'JSON Data');
+                html += `
+                <details open>
+                    <summary>${summary}</summary>
+                    <pre>${JSON.stringify(obj, null, 2)}</pre>
+                </details>
+            `;
+            } catch (e) {
+                html += `<span>${msg}</span>`;
+            }
+
+            div.innerHTML = html;
             logDiv.appendChild(div);
             logDiv.scrollTop = logDiv.scrollHeight;
         }
+
+        // Init
+        applyTemplate('login');
     </script>
+
 </body>
+
 </html>

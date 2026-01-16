@@ -40,7 +40,7 @@ message RegisterRequest {
   string service_name = 1;     // 服務名稱 (ex: "slots-service")
   routing.ServiceType type = 2;// 服務類型 (STATELESS/STATEFUL)
   string endpoint = 3;         // 可被 Connector 連線的地址 (ex: "10.0.1.5:9001")
-  // 未來可加入: []int32 game_ids, int32 current_load
+  repeated int32 game_ids = 4; // 支援的遊戲 ID 列表
 }
 
 message RegisterResponse {
@@ -71,9 +71,11 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  string user_id = 1;          // 驗證成功後回傳 UserID
-  bool success = 2;
-  string error_message = 3;
+  bool success = 1;
+  string error_message = 2;
+  string user_id = 3;          // 驗證成功後回傳 UserID
+  string nickname = 4;         // 暱稱
+  int64 balance = 5;           // 餘額
 }
 
 message GetRouteRequest {

@@ -26,6 +26,7 @@ type RegisterRequest struct {
 	ServiceName   string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"` // 服務名稱 (ex: "slots-service")
 	Type          ServiceType            `protobuf:"varint,2,opt,name=type,proto3,enum=routing.ServiceType" json:"type,omitempty"`        // 服務類型 (STATELESS/STATEFUL)
 	Endpoint      string                 `protobuf:"bytes,3,opt,name=endpoint,proto3" json:"endpoint,omitempty"`                          // 可被 Connector 連線的地址 (ex: "10.0.1.5:9001")
+	GameIds       []int32                `protobuf:"varint,4,rep,packed,name=game_ids,json=gameIds,proto3" json:"game_ids,omitempty"`     // 支援的遊戲 ID 列表
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -79,6 +80,13 @@ func (x *RegisterRequest) GetEndpoint() string {
 		return x.Endpoint
 	}
 	return ""
+}
+
+func (x *RegisterRequest) GetGameIds() []int32 {
+	if x != nil {
+		return x.GameIds
+	}
+	return nil
 }
 
 type RegisterResponse struct {
@@ -363,9 +371,11 @@ func (x *LoginRequest) GetToken() string {
 
 type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // 驗證成功後回傳 UserID
-	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // 驗證成功後回傳 UserID
+	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`           // 暱稱
+	Balance       int64                  `protobuf:"varint,5,opt,name=balance,proto3" json:"balance,omitempty"`            // 餘額
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -400,13 +410,6 @@ func (*LoginResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_central_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *LoginResponse) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
-}
-
 func (x *LoginResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
@@ -419,6 +422,27 @@ func (x *LoginResponse) GetErrorMessage() string {
 		return x.ErrorMessage
 	}
 	return ""
+}
+
+func (x *LoginResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetBalance() int64 {
+	if x != nil {
+		return x.Balance
+	}
+	return 0
 }
 
 type GetRouteRequest struct {
@@ -529,11 +553,12 @@ var File_api_proto_central_proto protoreflect.FileDescriptor
 
 const file_api_proto_central_proto_rawDesc = "" +
 	"\n" +
-	"\x17api/proto/central.proto\x12\acentral\x1a\x17api/proto/routing.proto\"z\n" +
+	"\x17api/proto/central.proto\x12\acentral\x1a\x17api/proto/routing.proto\"\x95\x01\n" +
 	"\x0fRegisterRequest\x12!\n" +
 	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12(\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x14.routing.ServiceTypeR\x04type\x12\x1a\n" +
-	"\bendpoint\x18\x03 \x01(\tR\bendpoint\"N\n" +
+	"\bendpoint\x18\x03 \x01(\tR\bendpoint\x12\x19\n" +
+	"\bgame_ids\x18\x04 \x03(\x05R\agameIds\"N\n" +
 	"\x10RegisterResponse\x12\x19\n" +
 	"\blease_id\x18\x01 \x01(\tR\aleaseId\x12\x1f\n" +
 	"\vttl_seconds\x18\x02 \x01(\x03R\n" +
@@ -548,11 +573,13 @@ const file_api_proto_central_proto_rawDesc = "" +
 	"\x12DeregisterResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"$\n" +
 	"\fLoginRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"g\n" +
-	"\rLoginResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x18\n" +
-	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"C\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\x9d\x01\n" +
+	"\rLoginResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1a\n" +
+	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x18\n" +
+	"\abalance\x18\x05 \x01(\x03R\abalance\"C\n" +
 	"\x0fGetRouteRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\agame_id\x18\x02 \x01(\x05R\x06gameId\"e\n" +

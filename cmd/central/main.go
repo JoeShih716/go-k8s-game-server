@@ -12,8 +12,10 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/handler"
+	"github.com/JoeShih716/go-k8s-game-server/internal/central/auth"
 	"github.com/JoeShih716/go-k8s-game-server/internal/central/registry"
+	"github.com/JoeShih716/go-k8s-game-server/internal/central/service"
+	"github.com/JoeShih716/go-k8s-game-server/internal/central/wallet"
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/mysql"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/redis"
@@ -67,9 +69,11 @@ func main() {
 	// 4.1 Service Registry (Redis Based)
 	reg := registry.NewRedisRegistry(rds)
 
-	// 4.2 Central Handler (gRPC 實作)
-	// TODO: Auth Manager
-	h := handler.NewHandler(reg, db)
+	// 4.2 Central Service (gRPC 實作)
+	// 初始化 Mock Authenticator & Mock Wallet
+	authenticator := auth.NewMockAuthenticator()
+	mockWallet := wallet.NewMockWallet()
+	h := service.NewService(reg, db, authenticator, mockWallet)
 
 	// 5. 啟動 gRPC Server
 	// Central 固定跑在 9003 (參考 config/local.yaml)

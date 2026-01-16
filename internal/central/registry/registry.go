@@ -21,6 +21,8 @@ const (
 	KeyServiceSet = "services:%s"
 	// Key Pattern: services:lease:{LeaseID} -> Service Metadata (JSON/Hash)
 	KeyLease = "services:lease:%s"
+	// Key Pattern: game:{GameID} -> Set of Endpoints
+	KeyGameSet = "game:%d"
 
 	DefaultTTL = 10 * time.Second
 )
@@ -29,6 +31,7 @@ const (
 type LeaseData struct {
 	Endpoint    string            `json:"endpoint"`
 	ServiceType proto.ServiceType `json:"service_type"`
+	GameIDs     []int32           `json:"game_ids"`
 }
 
 func NewRedisRegistry(rds *redis.Client) *Registry {
@@ -44,6 +47,7 @@ func (r *Registry) Register(ctx context.Context, req *proto.RegisterRequest) (st
 	data := &LeaseData{
 		Endpoint:    req.Endpoint,
 		ServiceType: req.Type,
+		GameIDs:     req.GameIds,
 	}
 
 	err := r.rds.SetStruct(ctx, leaseKey, data, DefaultTTL)
@@ -56,6 +60,16 @@ func (r *Registry) Register(ctx context.Context, req *proto.RegisterRequest) (st
 	err = r.rds.SAdd(ctx, setKey, req.Endpoint)
 	if err != nil {
 		return "", fmt.Errorf("failed to add to service set: %w", err)
+	}
+
+	// 3. 加入 Game ID 的集合 (方便做 Game Routing)
+	for _, gameID := range req.GameIds {
+		gameKey := fmt.Sprintf(KeyGameSet, gameID)
+		err = r.rds.SAdd(ctx, gameKey, req.Endpoint)
+		if err != nil {
+			// 盡最大努力寫入，不因為單一失敗中斷流程，但建議 Log (這裡直接回傳錯)
+			return "", fmt.Errorf("failed to add to game set: %w", err)
+		}
 	}
 
 	return leaseID, nil
@@ -92,15 +106,53 @@ func (r *Registry) Deregister(ctx context.Context, leaseID string) error {
 	}
 
 	// 2. 刪除 Lease
-	r.rds.Del(ctx, leaseKey)
+	_ = r.rds.Del(ctx, leaseKey)
 
 	// 3. 從 Set 移除 Endpoint
 	setKey := fmt.Sprintf(KeyServiceSet, data.ServiceType.String())
-	return r.rds.SRem(ctx, setKey, data.Endpoint)
+	_ = r.rds.SRem(ctx, setKey, data.Endpoint)
+
+	// 4. 從 Game ID Set 移除 Endpoint
+	for _, gameID := range data.GameIDs {
+		gameKey := fmt.Sprintf(KeyGameSet, gameID)
+		_ = r.rds.SRem(ctx, gameKey, data.Endpoint)
+	}
+
+	return nil
 }
 
 // GetServiceEndpoints 取得某類型的所有活躍地址
 func (r *Registry) GetServiceEndpoints(ctx context.Context, serviceType proto.ServiceType) ([]string, error) {
 	setKey := fmt.Sprintf(KeyServiceSet, serviceType.String())
 	return r.rds.SMembers(ctx, setKey)
+}
+
+// SelectService 隨機挑選一個健康的服務實例 (Simple Load Balancing)
+func (r *Registry) SelectService(ctx context.Context, serviceType proto.ServiceType) (string, error) {
+	// SrandMemberCommand (go-redis v9 uses SrandMemberN or SrandMember)
+	// For single random member:
+	setKey := fmt.Sprintf(KeyServiceSet, serviceType.String())
+
+	res, err := r.rds.SRandMember(ctx, setKey)
+	if err != nil {
+		return "", err
+	}
+
+	return res, nil
+}
+
+// SelectServiceByGame 根據 GameID 隨機挑選一個服務實例
+func (r *Registry) SelectServiceByGame(ctx context.Context, gameID int32) (string, error) {
+	key := fmt.Sprintf(KeyGameSet, gameID)
+
+	// 隨機取出一個
+	res, err := r.rds.SRandMember(ctx, key)
+	if err != nil {
+		if redis.IsNil(err) {
+			return "", nil // Not found
+		}
+		return "", err
+	}
+
+	return res, nil
 }

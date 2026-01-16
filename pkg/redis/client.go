@@ -213,3 +213,13 @@ func (c *Client) SMembers(ctx context.Context, key string) ([]string, error) {
 func (c *Client) SRem(ctx context.Context, key string, members ...any) error {
 	return c.rdb.SRem(ctx, key, members...).Err()
 }
+
+// SRandMember 隨機取得一個集合成員
+func (c *Client) SRandMember(ctx context.Context, key string) (string, error) {
+	return c.rdb.SRandMember(ctx, key).Result()
+}
+
+// IsNil 檢查是否為 Redis Key 不存在錯誤
+func IsNil(err error) bool {
+	return err == redis.Nil
+}

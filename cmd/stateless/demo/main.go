@@ -10,10 +10,11 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/internal/central/rpctool"
+	"github.com/JoeShih716/go-k8s-game-server/internal/central/rpcsdk"
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 	"github.com/JoeShih716/go-k8s-game-server/internal/stateless/demo"
 )
@@ -46,25 +47,39 @@ func main() {
 	myEndpoint := fmt.Sprintf("stateless-demo:%s", port)
 
 	// 從 config 取得 Central 地址
-	coordAddr := cfg.Services["central"]
-	if coordAddr == "" {
-		coordAddr = "central:9003" // Fallback
+	central := cfg.Services["central"]
+	if central == "" {
+		central = "central:9003" // Fallback
 	}
 
-	registrar := rpctool.NewRegistrar(coordAddr, &proto.RegisterRequest{
-		ServiceName: "slots-service-demo",
-		Type:        proto.ServiceType_STATELESS,
+	// 建立 gRPC 連線到 Central
+	centralConn, err := grpc.NewClient(central,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		slog.Error("Failed to connect to Central", "addr", central, "error", err)
+		// 繼續執行，Registrar 會嘗試重連 (如果我們把 conn 傳進去的話需確保 conn 是有效的嗎? grpc.NewClient 是 non-blocking)
+	}
+
+	registrar := rpcsdk.NewRegistrar(centralConn, &rpcsdk.Config{
+		ServiceName: "stateless-demo", // 與 docker-compose service name 一致 (或 logic name)
+		ServiceType: proto.ServiceType_STATELESS,
 		Endpoint:    myEndpoint,
+		GameIDs:     []int32{10000}, // 假設這個服務負責 Game ID 10000
 	})
 
 	// 在背景啟動註冊與心跳
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// 啟動註冊
 	go func() {
-		if err := registrar.Start(ctx); err != nil {
-			slog.Error("Registrar failed", "error", err)
+		if err := registrar.Register(ctx); err != nil {
+			slog.Error("Registrar failed to register", "error", err)
+			return // 註冊失敗是否要 Exit?
 		}
+		// 註冊成功後啟動心跳
+		registrar.StartHeartbeat(ctx)
 	}()
 
 	// 4. 建立 gRPC Server Listener
