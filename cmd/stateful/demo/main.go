@@ -18,7 +18,6 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
 	statefuldemo "github.com/JoeShih716/go-k8s-game-server/internal/applications/stateful-demo"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/stateful-demo/manager"
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 )
 
@@ -71,18 +70,12 @@ func main() {
 		ServiceType: proto.ServiceType_STATEFUL,
 		Endpoint:    fmt.Sprintf("%s:%s", host, port),
 		CentralAddr: centralAddr,
-		// GameIDs: Stateful Demo 負責 GameID 2 (假設 2 是捕魚/Demo桌)
-		GameIDs: []int32{2},
+		// GameIDs: Stateful Demo 負責 GameID 20000
+		GameIDs: []int32{20000},
 	})
-
-	// 4. 初始化 Room Manager
-	mgr := manager.NewManager()
+	// 在背景啟動註冊與心跳
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// 啟動 Manager Loop
-	go mgr.Start(ctx)
-
 	// 啟動 Registrar (背景執行)
 	go func() {
 		// 給 gRPC server 一點時間啟動
@@ -104,9 +97,10 @@ func main() {
 
 	// 6. 註冊 gRPC 服務
 	grpcServer := grpc.NewServer()
-	gameRPC.RegisterGameRPCServer(grpcServer, statefuldemo.NewHandler(mgr))
+	demoHandler := statefuldemo.NewHandler(host)
+	gameRPC.RegisterGameRPCServer(grpcServer, demoHandler)
 
-	// 啟用 gRPC Reflection (方便調試)
+	// 啟用 gRPC Reflection
 	reflection.Register(grpcServer)
 
 	// 7. 啟動 Server
@@ -119,16 +113,16 @@ func main() {
 	}()
 
 	// 8. Graceful Shutdown
-	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
+	// 等待中斷信號
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
 
-	<-stopChan
-	slog.Info("Shutting down service...")
+	slog.Info("Shutting down server...")
 
-	registrar.Stop(context.Background()) // Deregister
-	mgr.Stop()                           // Close all rooms
+	// 先停止註冊 (發送 Deregister)
+	registrar.Stop(context.Background())
+
 	grpcServer.GracefulStop()
-	conn.Close() // Close Central Conn
-
-	slog.Info("Service stopped")
+	slog.Info("Server exited")
 }
