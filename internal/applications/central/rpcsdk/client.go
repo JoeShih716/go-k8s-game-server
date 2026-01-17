@@ -6,32 +6,32 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
+	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 )
 
 // Client 封裝了 Connector 對 Central 的 RPC 呼叫
 // 提供 Login, GetRoute 等功能
 type Client struct {
-	cli proto.CentralServiceClient
+	rpcClient centralRPC.CentralRPCClient
 }
 
 // NewClient 建立 Connector RPC 客戶端
 func NewClient(conn *grpc.ClientConn) *Client {
 	return &Client{
-		cli: proto.NewCentralServiceClient(conn),
+		rpcClient: centralRPC.NewCentralRPCClient(conn),
 	}
 }
 
 // Login 呼叫 Central 進行登入
-func (c *Client) Login(ctx context.Context, token string) (*proto.LoginResponse, error) {
-	return c.cli.Login(ctx, &proto.LoginRequest{
+func (c *Client) Login(ctx context.Context, token string) (*centralRPC.LoginResponse, error) {
+	return c.rpcClient.Login(ctx, &centralRPC.LoginRequest{
 		Token: token,
 	})
 }
 
 // GetRoute 呼叫 Central 取得路由
-func (c *Client) GetRoute(ctx context.Context, userID string, gameID int32) (string, proto.ServiceType, error) {
-	resp, err := c.cli.GetRoute(ctx, &proto.GetRouteRequest{
-		UserId: userID,
+func (c *Client) GetRoute(ctx context.Context, gameID int32) (string, proto.ServiceType, error) {
+	resp, err := c.rpcClient.GetRoute(ctx, &centralRPC.GetRouteRequest{
 		GameId: gameID,
 	})
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
+	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/redis"
 )
 
@@ -39,7 +40,7 @@ func NewRedisRegistry(rds *redis.Client) *Registry {
 }
 
 // Register 註冊一個新服務
-func (r *Registry) Register(ctx context.Context, req *proto.RegisterRequest) (string, error) {
+func (r *Registry) Register(ctx context.Context, req *centralRPC.RegisterRequest) (string, error) {
 	leaseID := uuid.New().String()
 
 	// 1. 儲存 Lease Metadata (包含 Endpoint 與 ServiceType)

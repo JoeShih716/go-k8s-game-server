@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.0
 // - protoc             v6.33.3
-// source: api/proto/central.proto
+// source: api/proto/centralRPC/central.proto
 
-package proto
+package centralRPC
 
 import (
 	context "context"
@@ -19,19 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CentralService_Register_FullMethodName   = "/central.CentralService/Register"
-	CentralService_Heartbeat_FullMethodName  = "/central.CentralService/Heartbeat"
-	CentralService_Deregister_FullMethodName = "/central.CentralService/Deregister"
-	CentralService_Login_FullMethodName      = "/central.CentralService/Login"
-	CentralService_GetRoute_FullMethodName   = "/central.CentralService/GetRoute"
+	CentralRPC_Register_FullMethodName   = "/centralRPC.CentralRPC/Register"
+	CentralRPC_Heartbeat_FullMethodName  = "/centralRPC.CentralRPC/Heartbeat"
+	CentralRPC_Deregister_FullMethodName = "/centralRPC.CentralRPC/Deregister"
+	CentralRPC_Login_FullMethodName      = "/centralRPC.CentralRPC/Login"
+	CentralRPC_GetRoute_FullMethodName   = "/centralRPC.CentralRPC/GetRoute"
 )
 
-// CentralServiceClient is the client API for CentralService service.
+// CentralRPCClient is the client API for CentralRPC service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// CentralService 定義了遊戲服務註冊、發現與玩家驗證的核心功能
-type CentralServiceClient interface {
+// CentralRPC 定義了遊戲服務註冊、發現與玩家驗證的核心功能
+type CentralRPCClient interface {
 	// Register: 服務啟動時呼叫，註冊自己的地址與負責的遊戲 ID
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	// Heartbeat: 定期呼叫，維持服務在 Registry 中的活躍狀態 (Renew TTL)
@@ -44,70 +44,70 @@ type CentralServiceClient interface {
 	GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*GetRouteResponse, error)
 }
 
-type centralServiceClient struct {
+type centralRPCClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewCentralServiceClient(cc grpc.ClientConnInterface) CentralServiceClient {
-	return &centralServiceClient{cc}
+func NewCentralRPCClient(cc grpc.ClientConnInterface) CentralRPCClient {
+	return &centralRPCClient{cc}
 }
 
-func (c *centralServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+func (c *centralRPCClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RegisterResponse)
-	err := c.cc.Invoke(ctx, CentralService_Register_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CentralRPC_Register_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *centralServiceClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error) {
+func (c *centralRPCClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HeartbeatResponse)
-	err := c.cc.Invoke(ctx, CentralService_Heartbeat_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CentralRPC_Heartbeat_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *centralServiceClient) Deregister(ctx context.Context, in *DeregisterRequest, opts ...grpc.CallOption) (*DeregisterResponse, error) {
+func (c *centralRPCClient) Deregister(ctx context.Context, in *DeregisterRequest, opts ...grpc.CallOption) (*DeregisterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeregisterResponse)
-	err := c.cc.Invoke(ctx, CentralService_Deregister_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CentralRPC_Deregister_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *centralServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *centralRPCClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LoginResponse)
-	err := c.cc.Invoke(ctx, CentralService_Login_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CentralRPC_Login_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *centralServiceClient) GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*GetRouteResponse, error) {
+func (c *centralRPCClient) GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*GetRouteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRouteResponse)
-	err := c.cc.Invoke(ctx, CentralService_GetRoute_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CentralRPC_GetRoute_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// CentralServiceServer is the server API for CentralService service.
-// All implementations must embed UnimplementedCentralServiceServer
+// CentralRPCServer is the server API for CentralRPC service.
+// All implementations must embed UnimplementedCentralRPCServer
 // for forward compatibility.
 //
-// CentralService 定義了遊戲服務註冊、發現與玩家驗證的核心功能
-type CentralServiceServer interface {
+// CentralRPC 定義了遊戲服務註冊、發現與玩家驗證的核心功能
+type CentralRPCServer interface {
 	// Register: 服務啟動時呼叫，註冊自己的地址與負責的遊戲 ID
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	// Heartbeat: 定期呼叫，維持服務在 Registry 中的活躍狀態 (Renew TTL)
@@ -118,170 +118,170 @@ type CentralServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	// GetRoute: 玩家請求進入遊戲時呼叫，取得目標服務地址
 	GetRoute(context.Context, *GetRouteRequest) (*GetRouteResponse, error)
-	mustEmbedUnimplementedCentralServiceServer()
+	mustEmbedUnimplementedCentralRPCServer()
 }
 
-// UnimplementedCentralServiceServer must be embedded to have
+// UnimplementedCentralRPCServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedCentralServiceServer struct{}
+type UnimplementedCentralRPCServer struct{}
 
-func (UnimplementedCentralServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
+func (UnimplementedCentralRPCServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedCentralServiceServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
+func (UnimplementedCentralRPCServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Heartbeat not implemented")
 }
-func (UnimplementedCentralServiceServer) Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error) {
+func (UnimplementedCentralRPCServer) Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Deregister not implemented")
 }
-func (UnimplementedCentralServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+func (UnimplementedCentralRPCServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedCentralServiceServer) GetRoute(context.Context, *GetRouteRequest) (*GetRouteResponse, error) {
+func (UnimplementedCentralRPCServer) GetRoute(context.Context, *GetRouteRequest) (*GetRouteResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRoute not implemented")
 }
-func (UnimplementedCentralServiceServer) mustEmbedUnimplementedCentralServiceServer() {}
-func (UnimplementedCentralServiceServer) testEmbeddedByValue()                        {}
+func (UnimplementedCentralRPCServer) mustEmbedUnimplementedCentralRPCServer() {}
+func (UnimplementedCentralRPCServer) testEmbeddedByValue()                    {}
 
-// UnsafeCentralServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CentralServiceServer will
+// UnsafeCentralRPCServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CentralRPCServer will
 // result in compilation errors.
-type UnsafeCentralServiceServer interface {
-	mustEmbedUnimplementedCentralServiceServer()
+type UnsafeCentralRPCServer interface {
+	mustEmbedUnimplementedCentralRPCServer()
 }
 
-func RegisterCentralServiceServer(s grpc.ServiceRegistrar, srv CentralServiceServer) {
-	// If the following call panics, it indicates UnimplementedCentralServiceServer was
+func RegisterCentralRPCServer(s grpc.ServiceRegistrar, srv CentralRPCServer) {
+	// If the following call panics, it indicates UnimplementedCentralRPCServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&CentralService_ServiceDesc, srv)
+	s.RegisterService(&CentralRPC_ServiceDesc, srv)
 }
 
-func _CentralService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CentralRPC_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CentralServiceServer).Register(ctx, in)
+		return srv.(CentralRPCServer).Register(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CentralService_Register_FullMethodName,
+		FullMethod: CentralRPC_Register_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentralServiceServer).Register(ctx, req.(*RegisterRequest))
+		return srv.(CentralRPCServer).Register(ctx, req.(*RegisterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CentralService_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CentralRPC_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HeartbeatRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CentralServiceServer).Heartbeat(ctx, in)
+		return srv.(CentralRPCServer).Heartbeat(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CentralService_Heartbeat_FullMethodName,
+		FullMethod: CentralRPC_Heartbeat_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentralServiceServer).Heartbeat(ctx, req.(*HeartbeatRequest))
+		return srv.(CentralRPCServer).Heartbeat(ctx, req.(*HeartbeatRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CentralService_Deregister_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CentralRPC_Deregister_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeregisterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CentralServiceServer).Deregister(ctx, in)
+		return srv.(CentralRPCServer).Deregister(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CentralService_Deregister_FullMethodName,
+		FullMethod: CentralRPC_Deregister_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentralServiceServer).Deregister(ctx, req.(*DeregisterRequest))
+		return srv.(CentralRPCServer).Deregister(ctx, req.(*DeregisterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CentralService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CentralRPC_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoginRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CentralServiceServer).Login(ctx, in)
+		return srv.(CentralRPCServer).Login(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CentralService_Login_FullMethodName,
+		FullMethod: CentralRPC_Login_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentralServiceServer).Login(ctx, req.(*LoginRequest))
+		return srv.(CentralRPCServer).Login(ctx, req.(*LoginRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CentralService_GetRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CentralRPC_GetRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRouteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CentralServiceServer).GetRoute(ctx, in)
+		return srv.(CentralRPCServer).GetRoute(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CentralService_GetRoute_FullMethodName,
+		FullMethod: CentralRPC_GetRoute_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentralServiceServer).GetRoute(ctx, req.(*GetRouteRequest))
+		return srv.(CentralRPCServer).GetRoute(ctx, req.(*GetRouteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// CentralService_ServiceDesc is the grpc.ServiceDesc for CentralService service.
+// CentralRPC_ServiceDesc is the grpc.ServiceDesc for CentralRPC service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var CentralService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "central.CentralService",
-	HandlerType: (*CentralServiceServer)(nil),
+var CentralRPC_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "centralRPC.CentralRPC",
+	HandlerType: (*CentralRPCServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Register",
-			Handler:    _CentralService_Register_Handler,
+			Handler:    _CentralRPC_Register_Handler,
 		},
 		{
 			MethodName: "Heartbeat",
-			Handler:    _CentralService_Heartbeat_Handler,
+			Handler:    _CentralRPC_Heartbeat_Handler,
 		},
 		{
 			MethodName: "Deregister",
-			Handler:    _CentralService_Deregister_Handler,
+			Handler:    _CentralRPC_Deregister_Handler,
 		},
 		{
 			MethodName: "Login",
-			Handler:    _CentralService_Login_Handler,
+			Handler:    _CentralRPC_Login_Handler,
 		},
 		{
 			MethodName: "GetRoute",
-			Handler:    _CentralService_GetRoute_Handler,
+			Handler:    _CentralRPC_GetRoute_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/proto/central.proto",
+	Metadata: "api/proto/centralRPC/central.proto",
 }

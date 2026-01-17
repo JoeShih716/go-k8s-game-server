@@ -14,12 +14,14 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
+	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
 	demo "github.com/JoeShih716/go-k8s-game-server/internal/applications/stateless-demo"
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 )
 
 func main() {
+	// ... (imports changed, main function code same until usage)
 	// 1. 初始化 Logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
@@ -95,7 +97,7 @@ func main() {
 	// 5. 註冊 gRPC 服務
 	grpcServer := grpc.NewServer()
 	demoHandler := demo.NewHandler(host)
-	proto.RegisterGameServiceServer(grpcServer, demoHandler)
+	gameRPC.RegisterGameRPCServer(grpcServer, demoHandler)
 
 	// 啟用 gRPC Reflection
 	reflection.Register(grpcServer)

@@ -3,9 +3,9 @@
 這裡存放了所有遊戲伺服器微服務之間的「溝通合約」。我們使用 Google 的 Protocol Buffers (proto3) 來定義這些合約。
 
 ## 目錄結構
--   **`common.proto`**: 通用的資料結構 (例如: 封包 Header, 錯誤碼 ErrorCode)。
--   **`gateway.proto`**: Gateway (Connector) 相關的指令 (例如: 踢人, 廣播)。
--   **`routing.proto`**: 路由相關定義 (例如: 服務類型, 路由元數據)。
+-   **`common.proto`**: 通用的資料結構 (例如: 封包 Header, 錯誤碼 ErrorCode, 服務類型 ServiceType)。
+-   **`centralRPC/`**: Central 服務的 RPC 定義。
+-   **`gameRPC/`**: 遊戲服務的通用 RPC 介面。
 
 ## 為什麼要用 Protobuf?
 1.  **效能**: 序列化後的二進位資料比 JSON 小得多，解析速度快數倍。(這對即時遊戲至關重要)

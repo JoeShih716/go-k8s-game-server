@@ -10,11 +10,11 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
+	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/protocol"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
-	"github.com/JoeShih716/go-k8s-game-server/internal/core/router"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )
@@ -22,16 +22,14 @@ import (
 // WebsocketHandler 實作 wss.Subscriber 介面，處理 WebSocket 事件
 type WebsocketHandler struct {
 	sessionMgr    *session.Manager
-	router        router.Router
 	grpcPool      *grpcpkg.Pool
 	centralClient *rpcsdk.Client
 }
 
 // NewWebsocketHandler 建立 WebSocket 事件處理器
-func NewWebsocketHandler(mgr *session.Manager, r router.Router, pool *grpcpkg.Pool, central *rpcsdk.Client) *WebsocketHandler {
+func NewWebsocketHandler(mgr *session.Manager, pool *grpcpkg.Pool, central *rpcsdk.Client) *WebsocketHandler {
 	return &WebsocketHandler{
 		sessionMgr:    mgr,
-		router:        r,
 		grpcPool:      pool,
 		centralClient: central,
 	}
@@ -104,7 +102,7 @@ func (h *WebsocketHandler) OnMessage(conn wss.Client, msg []byte) {
 		// 這裡可以做進一步檢查 service_type，但基本上只要沒 target_endpoint 且有 gameID 就是 Stateless
 		// 重新向 Central 詢問路由 (實現 Packet-Level Load Balancing)
 		// 注意: 這會增加 Central 的負載，生產環境可用本地快取列表優化
-		userID := h.getUserID(conn)
+
 		var gameID int
 		if _, err := fmt.Sscanf(gameIDStr.(string), "%d", &gameID); err != nil {
 			slog.Error("Failed to parse gameID from session", "game_id_str", gameIDStr)
@@ -113,7 +111,7 @@ func (h *WebsocketHandler) OnMessage(conn wss.Client, msg []byte) {
 
 		// 快速 GetRoute
 		routeCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
-		endpoint, _, err := h.centralClient.GetRoute(routeCtx, userID, int32(gameID))
+		endpoint, _, err := h.centralClient.GetRoute(routeCtx, int32(gameID))
 		cancel()
 
 		if err == nil && endpoint != "" {
@@ -184,7 +182,7 @@ func (h *WebsocketHandler) handleLogin(ctx context.Context, conn wss.Client, pay
 
 func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client, payload []byte) {
 	// 檢查是否已經在遊戲中
-	if _, ok := conn.GetTag("target_endpoint"); ok {
+	if _, ok := conn.GetTag("current_game_id"); ok {
 		h.sendError(conn, protocol.ActionEnterGame, "Already In Game")
 		return
 	}
@@ -210,7 +208,7 @@ func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client,
 	routeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	endpoint, serviceType, err := h.centralClient.GetRoute(routeCtx, userID, req.GameID)
+	endpoint, serviceType, err := h.centralClient.GetRoute(routeCtx, req.GameID)
 	// Central 會處理 10000 邏輯，若 error 代表不合法或 demo 以外
 	if err != nil {
 		slog.Error("GetRoute failed", "game_id", req.GameID, "error", err)
@@ -245,8 +243,8 @@ func (h *WebsocketHandler) forwardToBackend(ctx context.Context, conn wss.Client
 		return
 	}
 
-	client := proto.NewGameServiceClient(rpcConn)
-	rpcReq := &proto.GameRequest{
+	client := gameRPC.NewGameRPCClient(rpcConn)
+	rpcReq := &gameRPC.GameRequest{
 		Header: &proto.PacketHeader{
 			ReqId:     fmt.Sprintf("%d", time.Now().UnixNano()),
 			UserId:    h.getUserID(conn),

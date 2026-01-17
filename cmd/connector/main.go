@@ -13,7 +13,6 @@ import (
 
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/handler"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/router"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
@@ -59,17 +58,14 @@ func main() {
 	// 即使連線失敗，client 仍可建立 (gRPC 會自動重連，或在 Call 時報錯)
 	centralClient := rpcsdk.NewClient(centralConn)
 
-	// 5. 初始化 Discovery (Switch to CentralDiscovery)
-	// discovery := router.NewStaticDiscovery(cfg.Services)
-	discovery := router.NewCentralDiscovery(centralClient)
-	smartRouter := router.NewSmartRouter(discovery)
+
 
 	// 6. 初始化 gRPC Pool
 	grpcPool := grpcpkg.NewPool()
 	defer grpcPool.Close()
 
 	// 7. 初始化 WebSocket Handler
-	wsHandler := handler.NewWebsocketHandler(sessionMgr, smartRouter, grpcPool, centralClient)
+	wsHandler := handler.NewWebsocketHandler(sessionMgr, grpcPool, centralClient)
 
 	// 5. 初始化 WebSocket Server
 	wsConfig := &wss.Config{

@@ -2,11 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.33.3
-// source: api/proto/central.proto
+// source: api/proto/centralRPC/central.proto
 
-package proto
+package centralRPC
 
 import (
+	proto "github.com/JoeShih716/go-k8s-game-server/api/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -24,7 +25,7 @@ const (
 type RegisterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ServiceName   string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"` // 服務名稱 (ex: "slots-service")
-	Type          ServiceType            `protobuf:"varint,2,opt,name=type,proto3,enum=routing.ServiceType" json:"type,omitempty"`        // 服務類型 (STATELESS/STATEFUL)
+	Type          proto.ServiceType      `protobuf:"varint,2,opt,name=type,proto3,enum=common.ServiceType" json:"type,omitempty"`         // 服務類型 (STATELESS/STATEFUL)
 	Endpoint      string                 `protobuf:"bytes,3,opt,name=endpoint,proto3" json:"endpoint,omitempty"`                          // 可被 Connector 連線的地址 (ex: "10.0.1.5:9001")
 	GameIds       []int32                `protobuf:"varint,4,rep,packed,name=game_ids,json=gameIds,proto3" json:"game_ids,omitempty"`     // 支援的遊戲 ID 列表
 	unknownFields protoimpl.UnknownFields
@@ -33,7 +34,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_api_proto_central_proto_msgTypes[0]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +46,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[0]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +59,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{0}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RegisterRequest) GetServiceName() string {
@@ -68,11 +69,11 @@ func (x *RegisterRequest) GetServiceName() string {
 	return ""
 }
 
-func (x *RegisterRequest) GetType() ServiceType {
+func (x *RegisterRequest) GetType() proto.ServiceType {
 	if x != nil {
 		return x.Type
 	}
-	return ServiceType_UNKNOWN_SERVICE
+	return proto.ServiceType(0)
 }
 
 func (x *RegisterRequest) GetEndpoint() string {
@@ -99,7 +100,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_api_proto_central_proto_msgTypes[1]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -111,7 +112,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[1]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -124,7 +125,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{1}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RegisterResponse) GetLeaseId() string {
@@ -151,7 +152,7 @@ type HeartbeatRequest struct {
 
 func (x *HeartbeatRequest) Reset() {
 	*x = HeartbeatRequest{}
-	mi := &file_api_proto_central_proto_msgTypes[2]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -163,7 +164,7 @@ func (x *HeartbeatRequest) String() string {
 func (*HeartbeatRequest) ProtoMessage() {}
 
 func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[2]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -176,7 +177,7 @@ func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatRequest.ProtoReflect.Descriptor instead.
 func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{2}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *HeartbeatRequest) GetLeaseId() string {
@@ -202,7 +203,7 @@ type HeartbeatResponse struct {
 
 func (x *HeartbeatResponse) Reset() {
 	*x = HeartbeatResponse{}
-	mi := &file_api_proto_central_proto_msgTypes[3]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +215,7 @@ func (x *HeartbeatResponse) String() string {
 func (*HeartbeatResponse) ProtoMessage() {}
 
 func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[3]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +228,7 @@ func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
 func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{3}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *HeartbeatResponse) GetSuccess() bool {
@@ -246,7 +247,7 @@ type DeregisterRequest struct {
 
 func (x *DeregisterRequest) Reset() {
 	*x = DeregisterRequest{}
-	mi := &file_api_proto_central_proto_msgTypes[4]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -258,7 +259,7 @@ func (x *DeregisterRequest) String() string {
 func (*DeregisterRequest) ProtoMessage() {}
 
 func (x *DeregisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[4]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -271,7 +272,7 @@ func (x *DeregisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeregisterRequest.ProtoReflect.Descriptor instead.
 func (*DeregisterRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{4}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DeregisterRequest) GetLeaseId() string {
@@ -290,7 +291,7 @@ type DeregisterResponse struct {
 
 func (x *DeregisterResponse) Reset() {
 	*x = DeregisterResponse{}
-	mi := &file_api_proto_central_proto_msgTypes[5]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -302,7 +303,7 @@ func (x *DeregisterResponse) String() string {
 func (*DeregisterResponse) ProtoMessage() {}
 
 func (x *DeregisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[5]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -315,7 +316,7 @@ func (x *DeregisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeregisterResponse.ProtoReflect.Descriptor instead.
 func (*DeregisterResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{5}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DeregisterResponse) GetSuccess() bool {
@@ -334,7 +335,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_api_proto_central_proto_msgTypes[6]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -346,7 +347,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[6]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -359,7 +360,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{6}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *LoginRequest) GetToken() string {
@@ -382,7 +383,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_api_proto_central_proto_msgTypes[7]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +395,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[7]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +408,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{7}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *LoginResponse) GetSuccess() bool {
@@ -447,7 +448,6 @@ func (x *LoginResponse) GetBalance() string {
 
 type GetRouteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	GameId        int32                  `protobuf:"varint,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"` // 玩家想玩的遊戲 (ex: 1001)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -455,7 +455,7 @@ type GetRouteRequest struct {
 
 func (x *GetRouteRequest) Reset() {
 	*x = GetRouteRequest{}
-	mi := &file_api_proto_central_proto_msgTypes[8]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -467,7 +467,7 @@ func (x *GetRouteRequest) String() string {
 func (*GetRouteRequest) ProtoMessage() {}
 
 func (x *GetRouteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[8]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -480,14 +480,7 @@ func (x *GetRouteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRouteRequest.ProtoReflect.Descriptor instead.
 func (*GetRouteRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *GetRouteRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetRouteRequest) GetGameId() int32 {
@@ -500,14 +493,14 @@ func (x *GetRouteRequest) GetGameId() int32 {
 type GetRouteResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	TargetEndpoint string                 `protobuf:"bytes,1,opt,name=target_endpoint,json=targetEndpoint,proto3" json:"target_endpoint,omitempty"` // 目標服務地址 (ex: "10.0.1.5:9001")
-	Type           ServiceType            `protobuf:"varint,2,opt,name=type,proto3,enum=routing.ServiceType" json:"type,omitempty"`
+	Type           proto.ServiceType      `protobuf:"varint,2,opt,name=type,proto3,enum=common.ServiceType" json:"type,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetRouteResponse) Reset() {
 	*x = GetRouteResponse{}
-	mi := &file_api_proto_central_proto_msgTypes[9]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -519,7 +512,7 @@ func (x *GetRouteResponse) String() string {
 func (*GetRouteResponse) ProtoMessage() {}
 
 func (x *GetRouteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_central_proto_msgTypes[9]
+	mi := &file_api_proto_centralRPC_central_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -532,7 +525,7 @@ func (x *GetRouteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRouteResponse.ProtoReflect.Descriptor instead.
 func (*GetRouteResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_central_proto_rawDescGZIP(), []int{9}
+	return file_api_proto_centralRPC_central_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetRouteResponse) GetTargetEndpoint() string {
@@ -542,21 +535,22 @@ func (x *GetRouteResponse) GetTargetEndpoint() string {
 	return ""
 }
 
-func (x *GetRouteResponse) GetType() ServiceType {
+func (x *GetRouteResponse) GetType() proto.ServiceType {
 	if x != nil {
 		return x.Type
 	}
-	return ServiceType_UNKNOWN_SERVICE
+	return proto.ServiceType(0)
 }
 
-var File_api_proto_central_proto protoreflect.FileDescriptor
+var File_api_proto_centralRPC_central_proto protoreflect.FileDescriptor
 
-const file_api_proto_central_proto_rawDesc = "" +
+const file_api_proto_centralRPC_central_proto_rawDesc = "" +
 	"\n" +
-	"\x17api/proto/central.proto\x12\acentral\x1a\x17api/proto/routing.proto\"\x95\x01\n" +
+	"\"api/proto/centralRPC/central.proto\x12\n" +
+	"centralRPC\x1a\x16api/proto/common.proto\"\x94\x01\n" +
 	"\x0fRegisterRequest\x12!\n" +
-	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12(\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x14.routing.ServiceTypeR\x04type\x12\x1a\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12'\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x13.common.ServiceTypeR\x04type\x12\x1a\n" +
 	"\bendpoint\x18\x03 \x01(\tR\bendpoint\x12\x19\n" +
 	"\bgame_ids\x18\x04 \x03(\x05R\agameIds\"N\n" +
 	"\x10RegisterResponse\x12\x19\n" +
@@ -579,60 +573,60 @@ const file_api_proto_central_proto_rawDesc = "" +
 	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12\x17\n" +
 	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1a\n" +
 	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x18\n" +
-	"\abalance\x18\x05 \x01(\tR\abalance\"C\n" +
+	"\abalance\x18\x05 \x01(\tR\abalance\"*\n" +
 	"\x0fGetRouteRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
-	"\agame_id\x18\x02 \x01(\x05R\x06gameId\"e\n" +
+	"\agame_id\x18\x02 \x01(\x05R\x06gameId\"d\n" +
 	"\x10GetRouteResponse\x12'\n" +
-	"\x0ftarget_endpoint\x18\x01 \x01(\tR\x0etargetEndpoint\x12(\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x14.routing.ServiceTypeR\x04type2\xd5\x02\n" +
-	"\x0eCentralService\x12?\n" +
-	"\bRegister\x12\x18.central.RegisterRequest\x1a\x19.central.RegisterResponse\x12B\n" +
-	"\tHeartbeat\x12\x19.central.HeartbeatRequest\x1a\x1a.central.HeartbeatResponse\x12E\n" +
+	"\x0ftarget_endpoint\x18\x01 \x01(\tR\x0etargetEndpoint\x12'\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x13.common.ServiceTypeR\x04type2\xef\x02\n" +
 	"\n" +
-	"Deregister\x12\x1a.central.DeregisterRequest\x1a\x1b.central.DeregisterResponse\x126\n" +
-	"\x05Login\x12\x15.central.LoginRequest\x1a\x16.central.LoginResponse\x12?\n" +
-	"\bGetRoute\x12\x18.central.GetRouteRequest\x1a\x19.central.GetRouteResponseB:Z8github.com/JoeShih716/go-k8s-game-server/api/proto;protob\x06proto3"
+	"CentralRPC\x12E\n" +
+	"\bRegister\x12\x1b.centralRPC.RegisterRequest\x1a\x1c.centralRPC.RegisterResponse\x12H\n" +
+	"\tHeartbeat\x12\x1c.centralRPC.HeartbeatRequest\x1a\x1d.centralRPC.HeartbeatResponse\x12K\n" +
+	"\n" +
+	"Deregister\x12\x1d.centralRPC.DeregisterRequest\x1a\x1e.centralRPC.DeregisterResponse\x12<\n" +
+	"\x05Login\x12\x18.centralRPC.LoginRequest\x1a\x19.centralRPC.LoginResponse\x12E\n" +
+	"\bGetRoute\x12\x1b.centralRPC.GetRouteRequest\x1a\x1c.centralRPC.GetRouteResponseBJZHgithub.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC;centralRPCb\x06proto3"
 
 var (
-	file_api_proto_central_proto_rawDescOnce sync.Once
-	file_api_proto_central_proto_rawDescData []byte
+	file_api_proto_centralRPC_central_proto_rawDescOnce sync.Once
+	file_api_proto_centralRPC_central_proto_rawDescData []byte
 )
 
-func file_api_proto_central_proto_rawDescGZIP() []byte {
-	file_api_proto_central_proto_rawDescOnce.Do(func() {
-		file_api_proto_central_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_proto_central_proto_rawDesc), len(file_api_proto_central_proto_rawDesc)))
+func file_api_proto_centralRPC_central_proto_rawDescGZIP() []byte {
+	file_api_proto_centralRPC_central_proto_rawDescOnce.Do(func() {
+		file_api_proto_centralRPC_central_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_proto_centralRPC_central_proto_rawDesc), len(file_api_proto_centralRPC_central_proto_rawDesc)))
 	})
-	return file_api_proto_central_proto_rawDescData
+	return file_api_proto_centralRPC_central_proto_rawDescData
 }
 
-var file_api_proto_central_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
-var file_api_proto_central_proto_goTypes = []any{
-	(*RegisterRequest)(nil),    // 0: central.RegisterRequest
-	(*RegisterResponse)(nil),   // 1: central.RegisterResponse
-	(*HeartbeatRequest)(nil),   // 2: central.HeartbeatRequest
-	(*HeartbeatResponse)(nil),  // 3: central.HeartbeatResponse
-	(*DeregisterRequest)(nil),  // 4: central.DeregisterRequest
-	(*DeregisterResponse)(nil), // 5: central.DeregisterResponse
-	(*LoginRequest)(nil),       // 6: central.LoginRequest
-	(*LoginResponse)(nil),      // 7: central.LoginResponse
-	(*GetRouteRequest)(nil),    // 8: central.GetRouteRequest
-	(*GetRouteResponse)(nil),   // 9: central.GetRouteResponse
-	(ServiceType)(0),           // 10: routing.ServiceType
+var file_api_proto_centralRPC_central_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_api_proto_centralRPC_central_proto_goTypes = []any{
+	(*RegisterRequest)(nil),    // 0: centralRPC.RegisterRequest
+	(*RegisterResponse)(nil),   // 1: centralRPC.RegisterResponse
+	(*HeartbeatRequest)(nil),   // 2: centralRPC.HeartbeatRequest
+	(*HeartbeatResponse)(nil),  // 3: centralRPC.HeartbeatResponse
+	(*DeregisterRequest)(nil),  // 4: centralRPC.DeregisterRequest
+	(*DeregisterResponse)(nil), // 5: centralRPC.DeregisterResponse
+	(*LoginRequest)(nil),       // 6: centralRPC.LoginRequest
+	(*LoginResponse)(nil),      // 7: centralRPC.LoginResponse
+	(*GetRouteRequest)(nil),    // 8: centralRPC.GetRouteRequest
+	(*GetRouteResponse)(nil),   // 9: centralRPC.GetRouteResponse
+	(proto.ServiceType)(0),     // 10: common.ServiceType
 }
-var file_api_proto_central_proto_depIdxs = []int32{
-	10, // 0: central.RegisterRequest.type:type_name -> routing.ServiceType
-	10, // 1: central.GetRouteResponse.type:type_name -> routing.ServiceType
-	0,  // 2: central.CentralService.Register:input_type -> central.RegisterRequest
-	2,  // 3: central.CentralService.Heartbeat:input_type -> central.HeartbeatRequest
-	4,  // 4: central.CentralService.Deregister:input_type -> central.DeregisterRequest
-	6,  // 5: central.CentralService.Login:input_type -> central.LoginRequest
-	8,  // 6: central.CentralService.GetRoute:input_type -> central.GetRouteRequest
-	1,  // 7: central.CentralService.Register:output_type -> central.RegisterResponse
-	3,  // 8: central.CentralService.Heartbeat:output_type -> central.HeartbeatResponse
-	5,  // 9: central.CentralService.Deregister:output_type -> central.DeregisterResponse
-	7,  // 10: central.CentralService.Login:output_type -> central.LoginResponse
-	9,  // 11: central.CentralService.GetRoute:output_type -> central.GetRouteResponse
+var file_api_proto_centralRPC_central_proto_depIdxs = []int32{
+	10, // 0: centralRPC.RegisterRequest.type:type_name -> common.ServiceType
+	10, // 1: centralRPC.GetRouteResponse.type:type_name -> common.ServiceType
+	0,  // 2: centralRPC.CentralRPC.Register:input_type -> centralRPC.RegisterRequest
+	2,  // 3: centralRPC.CentralRPC.Heartbeat:input_type -> centralRPC.HeartbeatRequest
+	4,  // 4: centralRPC.CentralRPC.Deregister:input_type -> centralRPC.DeregisterRequest
+	6,  // 5: centralRPC.CentralRPC.Login:input_type -> centralRPC.LoginRequest
+	8,  // 6: centralRPC.CentralRPC.GetRoute:input_type -> centralRPC.GetRouteRequest
+	1,  // 7: centralRPC.CentralRPC.Register:output_type -> centralRPC.RegisterResponse
+	3,  // 8: centralRPC.CentralRPC.Heartbeat:output_type -> centralRPC.HeartbeatResponse
+	5,  // 9: centralRPC.CentralRPC.Deregister:output_type -> centralRPC.DeregisterResponse
+	7,  // 10: centralRPC.CentralRPC.Login:output_type -> centralRPC.LoginResponse
+	9,  // 11: centralRPC.CentralRPC.GetRoute:output_type -> centralRPC.GetRouteResponse
 	7,  // [7:12] is the sub-list for method output_type
 	2,  // [2:7] is the sub-list for method input_type
 	2,  // [2:2] is the sub-list for extension type_name
@@ -640,27 +634,26 @@ var file_api_proto_central_proto_depIdxs = []int32{
 	0,  // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_api_proto_central_proto_init() }
-func file_api_proto_central_proto_init() {
-	if File_api_proto_central_proto != nil {
+func init() { file_api_proto_centralRPC_central_proto_init() }
+func file_api_proto_centralRPC_central_proto_init() {
+	if File_api_proto_centralRPC_central_proto != nil {
 		return
 	}
-	file_api_proto_routing_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_central_proto_rawDesc), len(file_api_proto_central_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_centralRPC_central_proto_rawDesc), len(file_api_proto_centralRPC_central_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_api_proto_central_proto_goTypes,
-		DependencyIndexes: file_api_proto_central_proto_depIdxs,
-		MessageInfos:      file_api_proto_central_proto_msgTypes,
+		GoTypes:           file_api_proto_centralRPC_central_proto_goTypes,
+		DependencyIndexes: file_api_proto_centralRPC_central_proto_depIdxs,
+		MessageInfos:      file_api_proto_centralRPC_central_proto_msgTypes,
 	}.Build()
-	File_api_proto_central_proto = out.File
-	file_api_proto_central_proto_goTypes = nil
-	file_api_proto_central_proto_depIdxs = nil
+	File_api_proto_centralRPC_central_proto = out.File
+	file_api_proto_centralRPC_central_proto_goTypes = nil
+	file_api_proto_centralRPC_central_proto_depIdxs = nil
 }

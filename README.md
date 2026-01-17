@@ -30,7 +30,7 @@ go-k8s-game-server/
 │
 ├── internal/                   # [核心代碼]
 │   ├── central/                # -> Central 實作細節
-│   ├── connector/              # -> Connector 實作 (Router, Handler)
+│   ├── connector/              # -> 網關服務 (WebSocket, Handler)
 │   ├── core/                   # -> 共享介面 (GameRoom, User Entity)
 │   └── stateless/              # -> 遊戲邏輯實作 (Usecase)
 │
@@ -41,9 +41,9 @@ go-k8s-game-server/
 │   └── wss/                    # -> WebSocket Framework (Hub, Pump)
 │
 ├── api/proto/                  # [通訊協議]
-│   ├── central.proto           # -> Central 服務接口
-│   ├── common.proto            # -> 通用封包結構
-│   └── routing.proto           # -> 路由規則定義
+│   ├── centralRPC/             # -> Central 服務接口
+│   ├── gameRPC/                # -> 遊戲服務通用介面
+│   └── common.proto            # -> 通用封包與枚舉 (ServiceType)
 │
 └── deploy/                     # [K8s Manifests & Dockerfiles]
 ```
@@ -63,6 +63,7 @@ go-k8s-game-server/
     - Central Service (:9003)
     - Connector Service (:8080)
     - Stateless Demo Service (:9001)
+    - Stateful Demo Service (:9002)
 
 2. **驗證**:
     - **Client**: 打開瀏覽器訪問 `http://localhost:8080` (內建測試用 HTML Client)。
@@ -115,9 +116,9 @@ kubectl apply -f deploy/k8s/apps/local/
     ```
 4. **驗證**: 使用 `kubectl get pods` 觀察狀態。
 
-### 2. 架構設計：客戶端負載平衡 (Client-Side Load Balancing)
+### 2. 架構設計：客戶端負載平衡 (Client-Side Load Balancing) 與 K8s Service
 
-在本專案的 K8s 部署中，我們對於 **gRPC** 通訊採取了特殊的路由策略：
+您會發現 `deploy/k8s/apps/local/stateless-demo.yaml` 中**沒有定義 Service (ClusterIP/LoadBalancer)**，這是為了實現更高效的 gRPC 路由：
 
 *   **Stateless 服務 (Demo)**：
     *   **不使用 Kubernetes ClusterIP (Service IP)** 做核心路由。因為 ClusterIP 是 L4 Load Balancer，無法對長連線 (gRPC/HTTP2) 做 Request-Level 的負載平衡 (會導致 Sticky Connection 問題)。

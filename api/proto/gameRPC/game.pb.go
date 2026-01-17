@@ -2,11 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.33.3
-// source: api/proto/service.proto
+// source: api/proto/gameRPC/game.proto
 
-package proto
+package gameRPC
 
 import (
+	proto "github.com/JoeShih716/go-k8s-game-server/api/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -24,7 +25,7 @@ const (
 // GameRequest 包含請求的完整上下文
 type GameRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Header        *PacketHeader          `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`   // 標準標頭 (UserID, SessionID)
+	Header        *proto.PacketHeader    `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`   // 標準標頭 (UserID, SessionID)
 	Payload       []byte                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"` // 業務邏輯 payload (可能是另一個 Proto 或 JSON)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -32,7 +33,7 @@ type GameRequest struct {
 
 func (x *GameRequest) Reset() {
 	*x = GameRequest{}
-	mi := &file_api_proto_service_proto_msgTypes[0]
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +45,7 @@ func (x *GameRequest) String() string {
 func (*GameRequest) ProtoMessage() {}
 
 func (x *GameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_service_proto_msgTypes[0]
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,10 +58,10 @@ func (x *GameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameRequest.ProtoReflect.Descriptor instead.
 func (*GameRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_service_proto_rawDescGZIP(), []int{0}
+	return file_api_proto_gameRPC_game_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GameRequest) GetHeader() *PacketHeader {
+func (x *GameRequest) GetHeader() *proto.PacketHeader {
 	if x != nil {
 		return x.Header
 	}
@@ -77,7 +78,7 @@ func (x *GameRequest) GetPayload() []byte {
 // GameResponse 包含回應結果
 type GameResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          ErrorCode              `protobuf:"varint,1,opt,name=code,proto3,enum=common.ErrorCode" json:"code,omitempty"`              // 錯誤碼 (0 = Success)
+	Code          proto.ErrorCode        `protobuf:"varint,1,opt,name=code,proto3,enum=common.ErrorCode" json:"code,omitempty"`              // 錯誤碼 (0 = Success)
 	Payload       []byte                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`                               // 回應 payload
 	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 錯誤訊息 (Debug用)
 	unknownFields protoimpl.UnknownFields
@@ -86,7 +87,7 @@ type GameResponse struct {
 
 func (x *GameResponse) Reset() {
 	*x = GameResponse{}
-	mi := &file_api_proto_service_proto_msgTypes[1]
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -98,7 +99,7 @@ func (x *GameResponse) String() string {
 func (*GameResponse) ProtoMessage() {}
 
 func (x *GameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_service_proto_msgTypes[1]
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -111,14 +112,14 @@ func (x *GameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameResponse.ProtoReflect.Descriptor instead.
 func (*GameResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_service_proto_rawDescGZIP(), []int{1}
+	return file_api_proto_gameRPC_game_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GameResponse) GetCode() ErrorCode {
+func (x *GameResponse) GetCode() proto.ErrorCode {
 	if x != nil {
 		return x.Code
 	}
-	return ErrorCode_SUCCESS
+	return proto.ErrorCode(0)
 }
 
 func (x *GameResponse) GetPayload() []byte {
@@ -135,45 +136,45 @@ func (x *GameResponse) GetErrorMessage() string {
 	return ""
 }
 
-var File_api_proto_service_proto protoreflect.FileDescriptor
+var File_api_proto_gameRPC_game_proto protoreflect.FileDescriptor
 
-const file_api_proto_service_proto_rawDesc = "" +
+const file_api_proto_gameRPC_game_proto_rawDesc = "" +
 	"\n" +
-	"\x17api/proto/service.proto\x12\aservice\x1a\x16api/proto/common.proto\"U\n" +
+	"\x1capi/proto/gameRPC/game.proto\x12\agameRPC\x1a\x16api/proto/common.proto\"U\n" +
 	"\vGameRequest\x12,\n" +
 	"\x06header\x18\x01 \x01(\v2\x14.common.PacketHeaderR\x06header\x12\x18\n" +
 	"\apayload\x18\x02 \x01(\fR\apayload\"t\n" +
 	"\fGameResponse\x12%\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x11.common.ErrorCodeR\x04code\x12\x18\n" +
 	"\apayload\x18\x02 \x01(\fR\apayload\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2B\n" +
-	"\vGameService\x123\n" +
-	"\x04Call\x12\x14.service.GameRequest\x1a\x15.service.GameResponseB:Z8github.com/JoeShih716/go-k8s-game-server/api/proto;protob\x06proto3"
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2>\n" +
+	"\aGameRPC\x123\n" +
+	"\x04Call\x12\x14.gameRPC.GameRequest\x1a\x15.gameRPC.GameResponseBDZBgithub.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC;gameRPCb\x06proto3"
 
 var (
-	file_api_proto_service_proto_rawDescOnce sync.Once
-	file_api_proto_service_proto_rawDescData []byte
+	file_api_proto_gameRPC_game_proto_rawDescOnce sync.Once
+	file_api_proto_gameRPC_game_proto_rawDescData []byte
 )
 
-func file_api_proto_service_proto_rawDescGZIP() []byte {
-	file_api_proto_service_proto_rawDescOnce.Do(func() {
-		file_api_proto_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_proto_service_proto_rawDesc), len(file_api_proto_service_proto_rawDesc)))
+func file_api_proto_gameRPC_game_proto_rawDescGZIP() []byte {
+	file_api_proto_gameRPC_game_proto_rawDescOnce.Do(func() {
+		file_api_proto_gameRPC_game_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_proto_gameRPC_game_proto_rawDesc), len(file_api_proto_gameRPC_game_proto_rawDesc)))
 	})
-	return file_api_proto_service_proto_rawDescData
+	return file_api_proto_gameRPC_game_proto_rawDescData
 }
 
-var file_api_proto_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_api_proto_service_proto_goTypes = []any{
-	(*GameRequest)(nil),  // 0: service.GameRequest
-	(*GameResponse)(nil), // 1: service.GameResponse
-	(*PacketHeader)(nil), // 2: common.PacketHeader
-	(ErrorCode)(0),       // 3: common.ErrorCode
+var file_api_proto_gameRPC_game_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_api_proto_gameRPC_game_proto_goTypes = []any{
+	(*GameRequest)(nil),        // 0: gameRPC.GameRequest
+	(*GameResponse)(nil),       // 1: gameRPC.GameResponse
+	(*proto.PacketHeader)(nil), // 2: common.PacketHeader
+	(proto.ErrorCode)(0),       // 3: common.ErrorCode
 }
-var file_api_proto_service_proto_depIdxs = []int32{
-	2, // 0: service.GameRequest.header:type_name -> common.PacketHeader
-	3, // 1: service.GameResponse.code:type_name -> common.ErrorCode
-	0, // 2: service.GameService.Call:input_type -> service.GameRequest
-	1, // 3: service.GameService.Call:output_type -> service.GameResponse
+var file_api_proto_gameRPC_game_proto_depIdxs = []int32{
+	2, // 0: gameRPC.GameRequest.header:type_name -> common.PacketHeader
+	3, // 1: gameRPC.GameResponse.code:type_name -> common.ErrorCode
+	0, // 2: gameRPC.GameRPC.Call:input_type -> gameRPC.GameRequest
+	1, // 3: gameRPC.GameRPC.Call:output_type -> gameRPC.GameResponse
 	3, // [3:4] is the sub-list for method output_type
 	2, // [2:3] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -181,27 +182,26 @@ var file_api_proto_service_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_api_proto_service_proto_init() }
-func file_api_proto_service_proto_init() {
-	if File_api_proto_service_proto != nil {
+func init() { file_api_proto_gameRPC_game_proto_init() }
+func file_api_proto_gameRPC_game_proto_init() {
+	if File_api_proto_gameRPC_game_proto != nil {
 		return
 	}
-	file_api_proto_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_service_proto_rawDesc), len(file_api_proto_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_gameRPC_game_proto_rawDesc), len(file_api_proto_gameRPC_game_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_api_proto_service_proto_goTypes,
-		DependencyIndexes: file_api_proto_service_proto_depIdxs,
-		MessageInfos:      file_api_proto_service_proto_msgTypes,
+		GoTypes:           file_api_proto_gameRPC_game_proto_goTypes,
+		DependencyIndexes: file_api_proto_gameRPC_game_proto_depIdxs,
+		MessageInfos:      file_api_proto_gameRPC_game_proto_msgTypes,
 	}.Build()
-	File_api_proto_service_proto = out.File
-	file_api_proto_service_proto_goTypes = nil
-	file_api_proto_service_proto_depIdxs = nil
+	File_api_proto_gameRPC_game_proto = out.File
+	file_api_proto_gameRPC_game_proto_goTypes = nil
+	file_api_proto_gameRPC_game_proto_depIdxs = nil
 }

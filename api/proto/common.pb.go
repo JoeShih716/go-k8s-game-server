@@ -21,6 +21,56 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ServiceType 定義了服務的類型，影響路由策略
+type ServiceType int32
+
+const (
+	ServiceType_UNKNOWN_SERVICE ServiceType = 0 // 未知服務
+	ServiceType_STATELESS       ServiceType = 1 // 無狀態服務 (例如: 老虎機, 大廳)，採用輪詢 (Round-Robin) 分發
+	ServiceType_STATEFUL        ServiceType = 2 // 有狀態服務 (例如: 捕魚, 對戰)，採用黏性路由 (Sticky Routing)
+)
+
+// Enum value maps for ServiceType.
+var (
+	ServiceType_name = map[int32]string{
+		0: "UNKNOWN_SERVICE",
+		1: "STATELESS",
+		2: "STATEFUL",
+	}
+	ServiceType_value = map[string]int32{
+		"UNKNOWN_SERVICE": 0,
+		"STATELESS":       1,
+		"STATEFUL":        2,
+	}
+)
+
+func (x ServiceType) Enum() *ServiceType {
+	p := new(ServiceType)
+	*p = x
+	return p
+}
+
+func (x ServiceType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ServiceType) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_proto_common_proto_enumTypes[0].Descriptor()
+}
+
+func (ServiceType) Type() protoreflect.EnumType {
+	return &file_api_proto_common_proto_enumTypes[0]
+}
+
+func (x ServiceType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ServiceType.Descriptor instead.
+func (ServiceType) EnumDescriptor() ([]byte, []int) {
+	return file_api_proto_common_proto_rawDescGZIP(), []int{0}
+}
+
 // ErrorCode 定義了系統通用的錯誤代碼
 type ErrorCode int32
 
@@ -64,11 +114,11 @@ func (x ErrorCode) String() string {
 }
 
 func (ErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_proto_common_proto_enumTypes[0].Descriptor()
+	return file_api_proto_common_proto_enumTypes[1].Descriptor()
 }
 
 func (ErrorCode) Type() protoreflect.EnumType {
-	return &file_api_proto_common_proto_enumTypes[0]
+	return &file_api_proto_common_proto_enumTypes[1]
 }
 
 func (x ErrorCode) Number() protoreflect.EnumNumber {
@@ -77,7 +127,7 @@ func (x ErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ErrorCode.Descriptor instead.
 func (ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_api_proto_common_proto_rawDescGZIP(), []int{0}
+	return file_api_proto_common_proto_rawDescGZIP(), []int{1}
 }
 
 // PacketHeader 定義了所有封包的標準標頭資料
@@ -168,7 +218,11 @@ const file_api_proto_common_proto_rawDesc = "" +
 	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x04 \x01(\tR\tsessionId\x12%\n" +
-	"\x0eclient_version\x18\x05 \x01(\tR\rclientVersion*s\n" +
+	"\x0eclient_version\x18\x05 \x01(\tR\rclientVersion*?\n" +
+	"\vServiceType\x12\x13\n" +
+	"\x0fUNKNOWN_SERVICE\x10\x00\x12\r\n" +
+	"\tSTATELESS\x10\x01\x12\f\n" +
+	"\bSTATEFUL\x10\x02*s\n" +
 	"\tErrorCode\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\x11\n" +
 	"\rUNKNOWN_ERROR\x10\x01\x12\x12\n" +
@@ -189,11 +243,12 @@ func file_api_proto_common_proto_rawDescGZIP() []byte {
 	return file_api_proto_common_proto_rawDescData
 }
 
-var file_api_proto_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_api_proto_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_proto_common_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_proto_common_proto_goTypes = []any{
-	(ErrorCode)(0),       // 0: common.ErrorCode
-	(*PacketHeader)(nil), // 1: common.PacketHeader
+	(ServiceType)(0),     // 0: common.ServiceType
+	(ErrorCode)(0),       // 1: common.ErrorCode
+	(*PacketHeader)(nil), // 2: common.PacketHeader
 }
 var file_api_proto_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -213,7 +268,7 @@ func file_api_proto_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_common_proto_rawDesc), len(file_api_proto_common_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,

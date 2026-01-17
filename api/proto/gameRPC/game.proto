@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package service;
+package gameRPC;
 
-option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto;proto";
+option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC;gameRPC";
 
 import "api/proto/common.proto";
 
-// GameService 定義了後端遊戲服務標準介面
-service GameService {
+// GameRPC 定義了後端遊戲服務標準介面
+service GameRPC {
   // Call 處理來自 Connector 的通用請求
   rpc Call(GameRequest) returns (GameResponse);
 }

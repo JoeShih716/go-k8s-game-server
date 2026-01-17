@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package central;
+package centralRPC;
 
-option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto;proto";
+option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC;centralRPC";
 
-import "api/proto/routing.proto";
+import "api/proto/common.proto";
 
-// CentralService 定義了遊戲服務註冊、發現與玩家驗證的核心功能
-service CentralService {
+// CentralRPC 定義了遊戲服務註冊、發現與玩家驗證的核心功能
+service CentralRPC {
   // -----------------------------------------------------------
   // Service Registry (供後端服務呼叫)
   // -----------------------------------------------------------
@@ -38,7 +38,7 @@ service CentralService {
 
 message RegisterRequest {
   string service_name = 1;     // 服務名稱 (ex: "slots-service")
-  routing.ServiceType type = 2;// 服務類型 (STATELESS/STATEFUL)
+  common.ServiceType type = 2;// 服務類型 (STATELESS/STATEFUL)
   string endpoint = 3;         // 可被 Connector 連線的地址 (ex: "10.0.1.5:9001")
   repeated int32 game_ids = 4; // 支援的遊戲 ID 列表
 }
@@ -79,11 +79,10 @@ message LoginResponse {
 }
 
 message GetRouteRequest {
-  string user_id = 1;
   int32 game_id = 2;           // 玩家想玩的遊戲 (ex: 1001)
 }
 
 message GetRouteResponse {
   string target_endpoint = 1;  // 目標服務地址 (ex: "10.0.1.5:9001")
-  routing.ServiceType type = 2;
+  common.ServiceType type = 2;
 }

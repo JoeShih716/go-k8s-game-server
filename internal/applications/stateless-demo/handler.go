@@ -6,11 +6,12 @@ import (
 	"log/slog"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
+	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
 )
 
 // Handler 實作 GameServiceServer 介面
 type Handler struct {
-	proto.UnimplementedGameServiceServer
+	gameRPC.UnimplementedGameRPCServer
 	host string
 }
 
@@ -22,7 +23,7 @@ func NewHandler(host string) *Handler {
 }
 
 // Call 處理這來自 Connector 的請求
-func (h *Handler) Call(ctx context.Context, req *proto.GameRequest) (*proto.GameResponse, error) {
+func (h *Handler) Call(ctx context.Context, req *gameRPC.GameRequest) (*gameRPC.GameResponse, error) {
 	// 取得 Payload (假設內容是字串)
 	payloadStr := string(req.Payload)
 
@@ -40,7 +41,7 @@ func (h *Handler) Call(ctx context.Context, req *proto.GameRequest) (*proto.Game
 	if err != nil {
 		return nil, err
 	}
-	return &proto.GameResponse{
+	return &gameRPC.GameResponse{
 		Code:         proto.ErrorCode_SUCCESS,
 		Payload:      jsonBytes,
 		ErrorMessage: "",

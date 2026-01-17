@@ -4,6 +4,13 @@ package common;
 
 option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto;proto";
 
+// ServiceType 定義了服務的類型，影響路由策略
+enum ServiceType {
+  UNKNOWN_SERVICE = 0; // 未知服務
+  STATELESS = 1;       // 無狀態服務 (例如: 老虎機, 大廳)，採用輪詢 (Round-Robin) 分發
+  STATEFUL = 2;        // 有狀態服務 (例如: 捕魚, 對戰)，採用黏性路由 (Sticky Routing)
+}
+
 // ErrorCode 定義了系統通用的錯誤代碼
 enum ErrorCode {
   SUCCESS = 0;        // 成功，無錯誤
@@ -22,3 +29,5 @@ message PacketHeader {
   string session_id = 4;     // 會話 Token (用於驗證)
   string client_version = 5; // 客戶端版本號 (用於相容性檢查)
 }
+
+

@@ -67,9 +67,28 @@ services:
       - ./:/app
       - go_cache:/root/.cache/go-build
       - go_mod_cache:/go/pkg/mod
-    command: air -c .air.demo.toml
+    command: air -c .air.statelessdemo.toml
     depends_on:
       - connector
+
+  stateful-demo:
+    build:
+      context: .
+      dockerfile: build/package/Dockerfile.local
+    container_name: game-stateful-demo
+    environment:
+      - APP_ENV=local
+      - PORT=9002
+    ports:
+      - "9002:9002"
+    volumes:
+      - ./:/app
+      - go_cache:/root/.cache/go-build
+      - go_mod_cache:/go/pkg/mod
+    command: air -c .air.statefuldemo.toml
+    depends_on:
+      - central
+
 
   central:
     build:

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/JoeShih716/go-k8s-game-server/api/proto"
+	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/auth"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/registry"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/service"
@@ -90,7 +90,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	proto.RegisterCentralServiceServer(grpcServer, h)
+	centralRPC.RegisterCentralRPCServer(grpcServer, h)
 	reflection.Register(grpcServer)
 
 	// 6. Graceful Shutdown

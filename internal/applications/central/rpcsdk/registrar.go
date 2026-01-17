@@ -8,15 +8,16 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
+	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 )
 
 // Registrar 封裝了後端服務對 Central 的註冊與心跳邏輯
 type Registrar struct {
-	cli      proto.CentralServiceClient
-	config   *Config
-	conn     *grpc.ClientConn
-	leaseID  string
-	stopChan chan struct{}
+	rpcClient centralRPC.CentralRPCClient
+	config    *Config
+	conn      *grpc.ClientConn
+	leaseID   string
+	stopChan  chan struct{}
 }
 
 type Config struct {
@@ -30,10 +31,10 @@ type Config struct {
 // NewRegistrar 建立註冊器
 func NewRegistrar(conn *grpc.ClientConn, cfg *Config) *Registrar {
 	return &Registrar{
-		cli:      proto.NewCentralServiceClient(conn),
-		config:   cfg,
-		conn:     conn,
-		stopChan: make(chan struct{}),
+		rpcClient: centralRPC.NewCentralRPCClient(conn),
+		config:    cfg,
+		conn:      conn,
+		stopChan:  make(chan struct{}),
 	}
 }
 
@@ -57,7 +58,7 @@ func (r *Registrar) Stop(ctx context.Context) {
 	}
 
 	if r.leaseID != "" {
-		_, _ = r.cli.Deregister(ctx, &proto.DeregisterRequest{
+		_, _ = r.rpcClient.Deregister(ctx, &centralRPC.DeregisterRequest{
 			LeaseId: r.leaseID,
 		})
 	}
@@ -77,7 +78,7 @@ func (r *Registrar) registerWithRetry(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			resp, err := r.cli.Register(ctx, &proto.RegisterRequest{
+			resp, err := r.rpcClient.Register(ctx, &centralRPC.RegisterRequest{
 				ServiceName: r.config.ServiceName,
 				Type:        r.config.ServiceType,
 				Endpoint:    r.config.Endpoint,
@@ -107,7 +108,7 @@ func (r *Registrar) heartbeatLoop(ctx context.Context) {
 			return
 		case <-ticker.C:
 			// 發送心跳
-			resp, err := r.cli.Heartbeat(ctx, &proto.HeartbeatRequest{
+			resp, err := r.rpcClient.Heartbeat(ctx, &centralRPC.HeartbeatRequest{
 				LeaseId:     r.leaseID,
 				CurrentLoad: 0, // TODO: 整合實際負載
 			})
