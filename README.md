@@ -50,12 +50,12 @@ go-k8s-game-server/
 │   └── stateful/               # -> 有狀態遊戲入口 (Demo)
 │
 ├── internal/                   # [內部核心] (Private Code)
-│   ├── app/                    # -> 具體業務邏輯 (Handler, Usecase)
+│   ├── applications/           # -> 具體業務邏輯 (Central, Connector, Demos)
 │   ├── config/                 # -> 配置加載 (Config.yaml + Env Override)
-│   ├── pkg/                    # -> 專案內共用套件
-│   │   ├── bootstrap/          #    -> 應用啟動器 (App Lifecycle)
-│   │   └── framework/          #    -> 遊戲伺服器框架 (Session, Server)
-│   └── ...
+│   ├── core/                   # -> 核心定義
+│   └── pkg/                    # -> 內部共用套件
+│       ├── bootstrap/          #    -> 應用啟動器 (App Lifecycle)
+│       └── framework/          #    -> 遊戲伺服器框架 (Session, Server)
 │
 ├── pkg/                        # [通用工具庫] (Public Libraries)
 │   ├── grpc/                   # -> gRPC Client Pool
@@ -140,7 +140,9 @@ go-k8s-game-server/
             GameIDs:     []int32{30000},
             DefaultPort: 9090,
         }
-        handler := mygame.NewHandler()
+        // Handler 需實作 framework.GameHandler
+        // NewHandler 通常接受 ServiceName 或 Host 以便回應資訊
+        handler := mygame.NewHandler(config.ServiceName)
         bootstrap.RunGameServer(config, handler)
     }
     ```
