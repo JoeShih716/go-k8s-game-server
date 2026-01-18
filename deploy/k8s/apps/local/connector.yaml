@@ -20,11 +20,20 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+        - containerPort: 9080 # gRPC
         env:
         - name: APP_ENV
           value: "local_k8s"
         - name: CENTRAL_ADDR
           value: "central:9003"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: GRPC_PORT
+          value: "9080"
+        - name: TZ
+          value: "Asia/Taipei"
 ---
 apiVersion: v1
 kind: Service

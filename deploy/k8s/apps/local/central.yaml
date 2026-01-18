@@ -23,8 +23,22 @@ spec:
         env:
         - name: APP_ENV
           value: "local_k8s"
+        - name: PORT
+          value: "9003"
         - name: REDIS_ADDR
           value: "redis:6379"
+        - name: MYSQL_HOST
+          value: "mysql"
+        - name: MYSQL_PORT
+          value: "3306"
+        - name: MYSQL_USER
+          value: "user"
+        - name: MYSQL_PASSWORD
+          value: "password"
+        - name: MYSQL_DB
+          value: "game_db"
+        - name: TZ
+          value: "Asia/Taipei"
 ---
 apiVersion: v1
 kind: Service

@@ -54,6 +54,9 @@ deploy/k8s/
 # 建置 Demo
 docker build -t game-server/demo --build-arg SERVICE_PATH=cmd/stateless/demo -f build/package/Dockerfile.localk8s .
 
+# 建置 Stateful Demo
+docker build -t game-server/stateful-demo --build-arg SERVICE_PATH=cmd/stateful/demo -f build/package/Dockerfile.localk8s .
+
 # 建置 Connector
 docker build -t game-server/connector --build-arg SERVICE_PATH=cmd/connector -f build/package/Dockerfile.localk8s .
 
@@ -70,9 +73,6 @@ docker build -t game-server/central --build-arg SERVICE_PATH=cmd/central -f buil
 kubectl apply -f deploy/k8s/local-infra/
 # 再跑應用程式 (Local版)
 kubectl apply -f deploy/k8s/apps/local/
-
-# (若要部署到正式環境)
-# kubectl apply -f deploy/k8s/apps/prod/
 
 # 2. 熱更新 (只修改了程式碼，已 Build 好 Image)
 # 這會讓舊 Pod 變為 Terminating，新 Pod 變為 Running (Rolling Update)

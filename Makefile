@@ -51,5 +51,5 @@ gen-proto:
 	@echo "正在生成 Protobuf代碼..."
 	@protoc --go_out=. --go_opt=paths=source_relative \
 	        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-	        api/proto/*.proto api/proto/centralRPC/*.proto api/proto/gameRPC/*.proto
+	        api/proto/*.proto api/proto/centralRPC/*.proto api/proto/gameRPC/*.proto api/proto/connectorRPC/*.proto
 	@echo "Protobuf 生成完成！"

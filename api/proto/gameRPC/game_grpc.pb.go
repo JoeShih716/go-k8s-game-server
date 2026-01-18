@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GameRPC_Call_FullMethodName = "/gameRPC.GameRPC/Call"
+	GameRPC_OnPlayerJoin_FullMethodName = "/gameRPC.GameRPC/OnPlayerJoin"
+	GameRPC_OnPlayerQuit_FullMethodName = "/gameRPC.GameRPC/OnPlayerQuit"
+	GameRPC_OnMessage_FullMethodName    = "/gameRPC.GameRPC/OnMessage"
 )
 
 // GameRPCClient is the client API for GameRPC service.
@@ -28,8 +30,13 @@ const (
 //
 // GameRPC 定義了後端遊戲服務標準介面
 type GameRPCClient interface {
-	// Call 處理來自 Connector 的通用請求
-	Call(ctx context.Context, in *GameRequest, opts ...grpc.CallOption) (*GameResponse, error)
+	// OnPlayerJoin 通知 Game Server 玩家進入 (Connector -> Game)
+	// JoinResp 成功後，Connector 才會將路由資訊寫入 Session 並回覆 Client
+	OnPlayerJoin(ctx context.Context, in *JoinReq, opts ...grpc.CallOption) (*JoinResp, error)
+	// OnPlayerQuit 通知 Game Server 玩家離開/斷線 (Connector -> Game)
+	OnPlayerQuit(ctx context.Context, in *QuitReq, opts ...grpc.CallOption) (*QuitResp, error)
+	// OnMessage 處理來自 Connector 的通用遊戲訊息
+	OnMessage(ctx context.Context, in *MsgReq, opts ...grpc.CallOption) (*MsgResp, error)
 }
 
 type gameRPCClient struct {
@@ -40,10 +47,30 @@ func NewGameRPCClient(cc grpc.ClientConnInterface) GameRPCClient {
 	return &gameRPCClient{cc}
 }
 
-func (c *gameRPCClient) Call(ctx context.Context, in *GameRequest, opts ...grpc.CallOption) (*GameResponse, error) {
+func (c *gameRPCClient) OnPlayerJoin(ctx context.Context, in *JoinReq, opts ...grpc.CallOption) (*JoinResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GameResponse)
-	err := c.cc.Invoke(ctx, GameRPC_Call_FullMethodName, in, out, cOpts...)
+	out := new(JoinResp)
+	err := c.cc.Invoke(ctx, GameRPC_OnPlayerJoin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gameRPCClient) OnPlayerQuit(ctx context.Context, in *QuitReq, opts ...grpc.CallOption) (*QuitResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QuitResp)
+	err := c.cc.Invoke(ctx, GameRPC_OnPlayerQuit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gameRPCClient) OnMessage(ctx context.Context, in *MsgReq, opts ...grpc.CallOption) (*MsgResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgResp)
+	err := c.cc.Invoke(ctx, GameRPC_OnMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +83,13 @@ func (c *gameRPCClient) Call(ctx context.Context, in *GameRequest, opts ...grpc.
 //
 // GameRPC 定義了後端遊戲服務標準介面
 type GameRPCServer interface {
-	// Call 處理來自 Connector 的通用請求
-	Call(context.Context, *GameRequest) (*GameResponse, error)
+	// OnPlayerJoin 通知 Game Server 玩家進入 (Connector -> Game)
+	// JoinResp 成功後，Connector 才會將路由資訊寫入 Session 並回覆 Client
+	OnPlayerJoin(context.Context, *JoinReq) (*JoinResp, error)
+	// OnPlayerQuit 通知 Game Server 玩家離開/斷線 (Connector -> Game)
+	OnPlayerQuit(context.Context, *QuitReq) (*QuitResp, error)
+	// OnMessage 處理來自 Connector 的通用遊戲訊息
+	OnMessage(context.Context, *MsgReq) (*MsgResp, error)
 	mustEmbedUnimplementedGameRPCServer()
 }
 
@@ -68,8 +100,14 @@ type GameRPCServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGameRPCServer struct{}
 
-func (UnimplementedGameRPCServer) Call(context.Context, *GameRequest) (*GameResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Call not implemented")
+func (UnimplementedGameRPCServer) OnPlayerJoin(context.Context, *JoinReq) (*JoinResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method OnPlayerJoin not implemented")
+}
+func (UnimplementedGameRPCServer) OnPlayerQuit(context.Context, *QuitReq) (*QuitResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method OnPlayerQuit not implemented")
+}
+func (UnimplementedGameRPCServer) OnMessage(context.Context, *MsgReq) (*MsgResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method OnMessage not implemented")
 }
 func (UnimplementedGameRPCServer) mustEmbedUnimplementedGameRPCServer() {}
 func (UnimplementedGameRPCServer) testEmbeddedByValue()                 {}
@@ -92,20 +130,56 @@ func RegisterGameRPCServer(s grpc.ServiceRegistrar, srv GameRPCServer) {
 	s.RegisterService(&GameRPC_ServiceDesc, srv)
 }
 
-func _GameRPC_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GameRequest)
+func _GameRPC_OnPlayerJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GameRPCServer).Call(ctx, in)
+		return srv.(GameRPCServer).OnPlayerJoin(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GameRPC_Call_FullMethodName,
+		FullMethod: GameRPC_OnPlayerJoin_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GameRPCServer).Call(ctx, req.(*GameRequest))
+		return srv.(GameRPCServer).OnPlayerJoin(ctx, req.(*JoinReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GameRPC_OnPlayerQuit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuitReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameRPCServer).OnPlayerQuit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GameRPC_OnPlayerQuit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameRPCServer).OnPlayerQuit(ctx, req.(*QuitReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GameRPC_OnMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameRPCServer).OnMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GameRPC_OnMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameRPCServer).OnMessage(ctx, req.(*MsgReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -118,8 +192,16 @@ var GameRPC_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GameRPCServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Call",
-			Handler:    _GameRPC_Call_Handler,
+			MethodName: "OnPlayerJoin",
+			Handler:    _GameRPC_OnPlayerJoin_Handler,
+		},
+		{
+			MethodName: "OnPlayerQuit",
+			Handler:    _GameRPC_OnPlayerQuit_Handler,
+		},
+		{
+			MethodName: "OnMessage",
+			Handler:    _GameRPC_OnMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

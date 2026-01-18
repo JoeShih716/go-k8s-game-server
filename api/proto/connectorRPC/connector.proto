@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package connectorRPC;
+
+option go_package = "github.com/JoeShih716/go-k8s-game-server/api/proto/connectorRPC;connectorRPC";
+
+import "api/proto/common.proto";
+
+// ConnectorRPC 定義了 Connector 提供的控制介面
+service ConnectorRPC {
+  // SendMessage 單播/多播: 發送訊息給指定玩家
+  rpc SendMessage(SendMessageReq) returns (SendMessageResp);
+
+  // Kick 強制踢除玩家
+  rpc Kick(KickReq) returns (KickResp);
+}
+
+message SendMessageReq {
+  common.PacketHeader header = 1;
+  // 目標玩家列表 (若為空則可能是針對單一 connection，但在 RPC 層級通常是用 UserID 或 SessionID)
+  // 這裡建議支援多個 SessionID 以提升廣播效率
+  repeated string session_ids = 2;
+  bytes payload = 3; // 原始訊息內容
+}
+
+message SendMessageResp {
+  common.ErrorCode code = 1;
+}
+
+message KickReq {
+  common.PacketHeader header = 1;
+  string session_id = 2;
+  string reason = 3;
+}
+
+message KickResp {
+  common.ErrorCode code = 1;
+}

@@ -8,19 +8,44 @@ import "api/proto/common.proto";
 
 // GameRPC 定義了後端遊戲服務標準介面
 service GameRPC {
-  // Call 處理來自 Connector 的通用請求
-  rpc Call(GameRequest) returns (GameResponse);
+  // OnPlayerJoin 通知 Game Server 玩家進入 (Connector -> Game)
+  // JoinResp 成功後，Connector 才會將路由資訊寫入 Session 並回覆 Client
+  rpc OnPlayerJoin(JoinReq) returns (JoinResp);
+
+  // OnPlayerQuit 通知 Game Server 玩家離開/斷線 (Connector -> Game)
+  rpc OnPlayerQuit(QuitReq) returns (QuitResp);
+
+  // OnMessage 處理來自 Connector 的通用遊戲訊息
+  rpc OnMessage(MsgReq) returns (MsgResp);
 }
 
-// GameRequest 包含請求的完整上下文
-message GameRequest {
-  common.PacketHeader header = 1; // 標準標頭 (UserID, SessionID)
-  bytes payload = 2;              // 業務邏輯 payload (可能是另一個 Proto 或 JSON)
+message JoinReq {
+  common.PacketHeader header = 1;
+  string connector_host = 2; // Connector 的 Pod IP (grpc host)
 }
 
-// GameResponse 包含回應結果
-message GameResponse {
-  common.ErrorCode code = 1;      // 錯誤碼 (0 = Success)
+message JoinResp {
+  common.ErrorCode code = 1;
+  string error_message = 2;
+}
+
+message QuitReq {
+  common.PacketHeader header = 1;
+}
+
+message QuitResp {
+  common.ErrorCode code = 1;
+}
+
+// MsgReq 包含請求的完整上下文
+message MsgReq {
+  common.PacketHeader header = 1; // 標準標頭
+  bytes payload = 2;              // 業務邏輯 payload
+}
+
+// MsgResp 包含回應結果
+message MsgResp {
+  common.ErrorCode code = 1;      // 錯誤碼
   bytes payload = 2;              // 回應 payload
   string error_message = 3;       // 錯誤訊息 (Debug用)
 }

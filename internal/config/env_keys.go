@@ -23,6 +23,18 @@ const (
 	// EnvMySQLHost 定義 MySQL 主機
 	EnvMySQLHost = "MYSQL_HOST"
 
+	// EnvMySQLUser 定義 MySQL 使用者
+	EnvMySQLUser = "MYSQL_USER"
+
+	// EnvMySQLDB 定義 MySQL 資料庫名稱
+	EnvMySQLDB = "MYSQL_DB"
+
+	// EnvMySQLPort 定義 MySQL Port
+	EnvMySQLPort = "MYSQL_PORT"
+
 	// EnvMySQLPassword 定義 MySQL 密碼
 	EnvMySQLPassword = "MYSQL_PASSWORD"
+
+	// EnvGrpcPort 定義 gRPC 服務 Port (Connector 用)
+	EnvGrpcPort = "GRPC_PORT"
 )

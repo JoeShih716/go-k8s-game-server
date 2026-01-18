@@ -27,6 +27,7 @@ services:
       MYSQL_DATABASE: game_db        # 預設建立的資料庫
       MYSQL_USER: user               # 應用程式使用的帳號
       MYSQL_PASSWORD: password       # 應用程式使用的密碼
+      TZ: Asia/Taipei
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -43,8 +44,13 @@ services:
     container_name: game-connector
     ports:
       - "8080:8080"
+      - "9080:9080" # gRPC Port
     environment:
       - APP_ENV=local
+      - POD_IP=game-connector # Docker Compose 內的 Container Name / Service Name
+      - POD_IP=game-connector # Docker Compose 內的 Container Name / Service Name
+      - GRPC_PORT=9080
+      - TZ=Asia/Taipei
     volumes:
       - .:/app
     depends_on:
@@ -61,6 +67,8 @@ services:
     environment:
       - APP_ENV=local
       - PORT=9001
+      - POD_IP=game-stateless-demo
+      - TZ=Asia/Taipei
     ports:
       - "9001:9001"
     volumes:
@@ -79,6 +87,8 @@ services:
     environment:
       - APP_ENV=local
       - PORT=9002
+      - POD_IP=game-stateful-demo
+      - TZ=Asia/Taipei
     ports:
       - "9002:9002"
     volumes:
@@ -98,6 +108,7 @@ services:
     environment:
       - APP_ENV=local
       - PORT=9003
+      - TZ=Asia/Taipei
     ports:
       - "9003:9003"
     volumes:

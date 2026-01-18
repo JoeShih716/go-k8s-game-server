@@ -30,3 +30,5 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: TZ
+          value: "Asia/Taipei"

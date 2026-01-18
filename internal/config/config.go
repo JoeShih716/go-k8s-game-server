@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"gopkg.in/yaml.v3"
 )
@@ -18,9 +19,11 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Name string `yaml:"name"`
-	Env  string `yaml:"env"`
-	Port int    `yaml:"port"`
+	Name     string `yaml:"name"`
+	Env      string `yaml:"env"`
+	Port     int    `yaml:"port"`
+	GrpcPort int    `yaml:"grpc_port"` // gRPC Server Port (Connector, etc.)
+	PodIP    string `yaml:"-"`         // Pod IP (runtime injected, not from file)
 }
 
 type RedisConfig struct {
@@ -48,56 +51,94 @@ type WSSConfig struct {
 }
 
 // Load 讀取設定檔
-// env: 環境名稱 (例如 "local", "dev", "prod")
-// configPath: 設定檔目錄路徑 (預設為 "./config")
-func Load(env string, configPath ...string) (*Config, error) {
-	if env == "" {
-		env = "local"
-	}
-
-	path := "./config"
+// 優先讀取 config/config.yaml，然後使用環境變數覆蓋
+func Load(configPath ...string) (*Config, error) {
+	// 1. 決定設定檔路徑
+	dir := "./config"
 	if len(configPath) > 0 {
-		path = configPath[0]
+		dir = configPath[0]
 	}
-
-	filename := fmt.Sprintf("%s.yaml", env)
-	fullPath := filepath.Join(path, filename)
-
-	// 支援讀取 config.yaml 作為預設，再讀取 env 特定檔案覆蓋 (這裡先簡單實作只讀取特定 env)
-	data, err := os.ReadFile(fullPath)
-	if err != nil {
-		// 嘗試讀取絕對路徑 (考慮到 Docker 中路徑可能不同)
-		absPath, _ := filepath.Abs(fullPath)
-		return nil, fmt.Errorf("failed to read config file at %s (abs: %s): %w", fullPath, absPath, err)
-	}
+	filename := "config.yaml"
+	fullPath := filepath.Join(dir, filename)
 
 	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse yaml: %w", err)
-	}
 
-	// 允許環境變數覆蓋配置 (Priority: Env Vars > Config File)
-	if p := os.Getenv(EnvMySQLPassword); p != "" {
-		cfg.MySQL.Password = p
-	}
-	if h := os.Getenv(EnvMySQLHost); h != "" {
-		cfg.MySQL.Host = h
-	}
-
-	if p := os.Getenv(EnvRedisPassword); p != "" {
-		cfg.Redis.Password = p
-	}
-	if addr := os.Getenv(EnvRedisAddr); addr != "" {
-		cfg.Redis.Addr = addr
-	}
-
-	// 支援覆蓋 Services 地址 (例如讓 K8s 可以動態指定 Central 位置)
-	if addr := os.Getenv(EnvCentralAddr); addr != "" {
-		if cfg.Services == nil {
-			cfg.Services = make(map[string]string)
+	// 2. 讀取 YAML 檔案 (如果存在)
+	// 若檔案不存在，也許是純 Env Var 運行模式，我們先 Log 或 Ignore，取決於策略。
+	// 但 User 要求 "預設讀一份 config.yaml"，所以我們假設它存在。
+	data, err := os.ReadFile(fullPath)
+	if err == nil {
+		if err := yaml.Unmarshal(data, &cfg); err != nil {
+			return nil, fmt.Errorf("failed to parse yaml at %s: %w", fullPath, err)
 		}
-		cfg.Services["central"] = addr
+	} else {
+		// 檔案讀取失敗，如果是找不到檔案，我們或許可以接受 (全靠 Env)，但這裡先 return error 比較安全
+		// 除非我們確定想要 fallback 到 empty config
+		return nil, fmt.Errorf("failed to read config file at %s: %w", fullPath, err)
 	}
+
+	// 3. 環境變數覆蓋 (Environment Variable Override)
+	overrideWithEnv(&cfg)
 
 	return &cfg, nil
+}
+
+func overrideWithEnv(cfg *Config) {
+	// App
+	if env := os.Getenv(EnvAppEnv); env != "" {
+		cfg.App.Env = env
+	}
+	if portVal := os.Getenv(EnvPort); portVal != "" {
+		if p, err := strconv.Atoi(portVal); err == nil {
+			cfg.App.Port = p
+		}
+	}
+	if grpcPortVal := os.Getenv(EnvGrpcPort); grpcPortVal != "" {
+		if p, err := strconv.Atoi(grpcPortVal); err == nil {
+			cfg.App.GrpcPort = p
+		}
+	}
+	if podIP := os.Getenv(EnvPodIP); podIP != "" {
+		cfg.App.PodIP = podIP
+	}
+
+	// MySQL
+	if val := os.Getenv(EnvMySQLHost); val != "" {
+		cfg.MySQL.Host = val
+	}
+	if val := os.Getenv(EnvMySQLPassword); val != "" {
+		cfg.MySQL.Password = val
+	}
+	// TODO: 更多 MySQL Env Override (Port, User, DBName) 如果需要
+	if val := os.Getenv(EnvMySQLUser); val != "" {
+		cfg.MySQL.User = val
+	}
+	if val := os.Getenv(EnvMySQLDB); val != "" {
+		cfg.MySQL.DBName = val
+	}
+	if val := os.Getenv(EnvMySQLPort); val != "" {
+		if p, err := strconv.Atoi(val); err == nil {
+			cfg.MySQL.Port = p
+		}
+	}
+
+	// Redis
+	if val := os.Getenv(EnvRedisAddr); val != "" {
+		cfg.Redis.Addr = val
+	}
+	if val := os.Getenv(EnvRedisPassword); val != "" {
+		cfg.Redis.Password = val
+	}
+
+	// Services
+	if cfg.Services == nil {
+		cfg.Services = make(map[string]string)
+	}
+	if val := os.Getenv(EnvCentralAddr); val != "" {
+		cfg.Services["central"] = val
+	}
+
+	// Pod IP usually maps to Host/Endpoint logic, typically handled in main,
+	// but can be stored if we added a field. For now, keep it out of Config struct
+	// or handle it where needed (Registrar).
 }

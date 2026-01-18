@@ -37,6 +37,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: TZ
+          value: "Asia/Taipei"
 ---
 # Headless Service (No ClusterIP)
 # 允許透過 DNS 解析個別 Pod (e.g., stateful-demo-0.stateful-demo)

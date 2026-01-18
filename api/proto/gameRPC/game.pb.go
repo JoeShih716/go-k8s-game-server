@@ -22,29 +22,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// GameRequest 包含請求的完整上下文
-type GameRequest struct {
+type JoinReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Header        *proto.PacketHeader    `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`   // 標準標頭 (UserID, SessionID)
-	Payload       []byte                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"` // 業務邏輯 payload (可能是另一個 Proto 或 JSON)
+	Header        *proto.PacketHeader    `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	ConnectorHost string                 `protobuf:"bytes,2,opt,name=connector_host,json=connectorHost,proto3" json:"connector_host,omitempty"` // Connector 的 Pod IP (grpc host)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GameRequest) Reset() {
-	*x = GameRequest{}
+func (x *JoinReq) Reset() {
+	*x = JoinReq{}
 	mi := &file_api_proto_gameRPC_game_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GameRequest) String() string {
+func (x *JoinReq) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GameRequest) ProtoMessage() {}
+func (*JoinReq) ProtoMessage() {}
 
-func (x *GameRequest) ProtoReflect() protoreflect.Message {
+func (x *JoinReq) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_gameRPC_game_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,49 +55,47 @@ func (x *GameRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GameRequest.ProtoReflect.Descriptor instead.
-func (*GameRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use JoinReq.ProtoReflect.Descriptor instead.
+func (*JoinReq) Descriptor() ([]byte, []int) {
 	return file_api_proto_gameRPC_game_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GameRequest) GetHeader() *proto.PacketHeader {
+func (x *JoinReq) GetHeader() *proto.PacketHeader {
 	if x != nil {
 		return x.Header
 	}
 	return nil
 }
 
-func (x *GameRequest) GetPayload() []byte {
+func (x *JoinReq) GetConnectorHost() string {
 	if x != nil {
-		return x.Payload
+		return x.ConnectorHost
 	}
-	return nil
+	return ""
 }
 
-// GameResponse 包含回應結果
-type GameResponse struct {
+type JoinResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          proto.ErrorCode        `protobuf:"varint,1,opt,name=code,proto3,enum=common.ErrorCode" json:"code,omitempty"`              // 錯誤碼 (0 = Success)
-	Payload       []byte                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`                               // 回應 payload
-	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 錯誤訊息 (Debug用)
+	Code          proto.ErrorCode        `protobuf:"varint,1,opt,name=code,proto3,enum=common.ErrorCode" json:"code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GameResponse) Reset() {
-	*x = GameResponse{}
+func (x *JoinResp) Reset() {
+	*x = JoinResp{}
 	mi := &file_api_proto_gameRPC_game_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GameResponse) String() string {
+func (x *JoinResp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GameResponse) ProtoMessage() {}
+func (*JoinResp) ProtoMessage() {}
 
-func (x *GameResponse) ProtoReflect() protoreflect.Message {
+func (x *JoinResp) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_gameRPC_game_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -110,26 +107,221 @@ func (x *GameResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GameResponse.ProtoReflect.Descriptor instead.
-func (*GameResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use JoinResp.ProtoReflect.Descriptor instead.
+func (*JoinResp) Descriptor() ([]byte, []int) {
 	return file_api_proto_gameRPC_game_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GameResponse) GetCode() proto.ErrorCode {
+func (x *JoinResp) GetCode() proto.ErrorCode {
 	if x != nil {
 		return x.Code
 	}
 	return proto.ErrorCode(0)
 }
 
-func (x *GameResponse) GetPayload() []byte {
+func (x *JoinResp) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+type QuitReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Header        *proto.PacketHeader    `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuitReq) Reset() {
+	*x = QuitReq{}
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuitReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuitReq) ProtoMessage() {}
+
+func (x *QuitReq) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuitReq.ProtoReflect.Descriptor instead.
+func (*QuitReq) Descriptor() ([]byte, []int) {
+	return file_api_proto_gameRPC_game_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *QuitReq) GetHeader() *proto.PacketHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+type QuitResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          proto.ErrorCode        `protobuf:"varint,1,opt,name=code,proto3,enum=common.ErrorCode" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuitResp) Reset() {
+	*x = QuitResp{}
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuitResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuitResp) ProtoMessage() {}
+
+func (x *QuitResp) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuitResp.ProtoReflect.Descriptor instead.
+func (*QuitResp) Descriptor() ([]byte, []int) {
+	return file_api_proto_gameRPC_game_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *QuitResp) GetCode() proto.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return proto.ErrorCode(0)
+}
+
+// MsgReq 包含請求的完整上下文
+type MsgReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Header        *proto.PacketHeader    `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`   // 標準標頭
+	Payload       []byte                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"` // 業務邏輯 payload
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgReq) Reset() {
+	*x = MsgReq{}
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgReq) ProtoMessage() {}
+
+func (x *MsgReq) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgReq.ProtoReflect.Descriptor instead.
+func (*MsgReq) Descriptor() ([]byte, []int) {
+	return file_api_proto_gameRPC_game_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *MsgReq) GetHeader() *proto.PacketHeader {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+func (x *MsgReq) GetPayload() []byte {
 	if x != nil {
 		return x.Payload
 	}
 	return nil
 }
 
-func (x *GameResponse) GetErrorMessage() string {
+// MsgResp 包含回應結果
+type MsgResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          proto.ErrorCode        `protobuf:"varint,1,opt,name=code,proto3,enum=common.ErrorCode" json:"code,omitempty"`              // 錯誤碼
+	Payload       []byte                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`                               // 回應 payload
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 錯誤訊息 (Debug用)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgResp) Reset() {
+	*x = MsgResp{}
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgResp) ProtoMessage() {}
+
+func (x *MsgResp) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_gameRPC_game_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgResp.ProtoReflect.Descriptor instead.
+func (*MsgResp) Descriptor() ([]byte, []int) {
+	return file_api_proto_gameRPC_game_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *MsgResp) GetCode() proto.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return proto.ErrorCode(0)
+}
+
+func (x *MsgResp) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *MsgResp) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -140,16 +332,28 @@ var File_api_proto_gameRPC_game_proto protoreflect.FileDescriptor
 
 const file_api_proto_gameRPC_game_proto_rawDesc = "" +
 	"\n" +
-	"\x1capi/proto/gameRPC/game.proto\x12\agameRPC\x1a\x16api/proto/common.proto\"U\n" +
-	"\vGameRequest\x12,\n" +
+	"\x1capi/proto/gameRPC/game.proto\x12\agameRPC\x1a\x16api/proto/common.proto\"^\n" +
+	"\aJoinReq\x12,\n" +
+	"\x06header\x18\x01 \x01(\v2\x14.common.PacketHeaderR\x06header\x12%\n" +
+	"\x0econnector_host\x18\x02 \x01(\tR\rconnectorHost\"V\n" +
+	"\bJoinResp\x12%\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x11.common.ErrorCodeR\x04code\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"7\n" +
+	"\aQuitReq\x12,\n" +
+	"\x06header\x18\x01 \x01(\v2\x14.common.PacketHeaderR\x06header\"1\n" +
+	"\bQuitResp\x12%\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x11.common.ErrorCodeR\x04code\"P\n" +
+	"\x06MsgReq\x12,\n" +
 	"\x06header\x18\x01 \x01(\v2\x14.common.PacketHeaderR\x06header\x12\x18\n" +
-	"\apayload\x18\x02 \x01(\fR\apayload\"t\n" +
-	"\fGameResponse\x12%\n" +
+	"\apayload\x18\x02 \x01(\fR\apayload\"o\n" +
+	"\aMsgResp\x12%\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x11.common.ErrorCodeR\x04code\x12\x18\n" +
 	"\apayload\x18\x02 \x01(\fR\apayload\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2>\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2\xa3\x01\n" +
 	"\aGameRPC\x123\n" +
-	"\x04Call\x12\x14.gameRPC.GameRequest\x1a\x15.gameRPC.GameResponseBDZBgithub.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC;gameRPCb\x06proto3"
+	"\fOnPlayerJoin\x12\x10.gameRPC.JoinReq\x1a\x11.gameRPC.JoinResp\x123\n" +
+	"\fOnPlayerQuit\x12\x10.gameRPC.QuitReq\x1a\x11.gameRPC.QuitResp\x12.\n" +
+	"\tOnMessage\x12\x0f.gameRPC.MsgReq\x1a\x10.gameRPC.MsgRespBDZBgithub.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC;gameRPCb\x06proto3"
 
 var (
 	file_api_proto_gameRPC_game_proto_rawDescOnce sync.Once
@@ -163,23 +367,35 @@ func file_api_proto_gameRPC_game_proto_rawDescGZIP() []byte {
 	return file_api_proto_gameRPC_game_proto_rawDescData
 }
 
-var file_api_proto_gameRPC_game_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_api_proto_gameRPC_game_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_api_proto_gameRPC_game_proto_goTypes = []any{
-	(*GameRequest)(nil),        // 0: gameRPC.GameRequest
-	(*GameResponse)(nil),       // 1: gameRPC.GameResponse
-	(*proto.PacketHeader)(nil), // 2: common.PacketHeader
-	(proto.ErrorCode)(0),       // 3: common.ErrorCode
+	(*JoinReq)(nil),            // 0: gameRPC.JoinReq
+	(*JoinResp)(nil),           // 1: gameRPC.JoinResp
+	(*QuitReq)(nil),            // 2: gameRPC.QuitReq
+	(*QuitResp)(nil),           // 3: gameRPC.QuitResp
+	(*MsgReq)(nil),             // 4: gameRPC.MsgReq
+	(*MsgResp)(nil),            // 5: gameRPC.MsgResp
+	(*proto.PacketHeader)(nil), // 6: common.PacketHeader
+	(proto.ErrorCode)(0),       // 7: common.ErrorCode
 }
 var file_api_proto_gameRPC_game_proto_depIdxs = []int32{
-	2, // 0: gameRPC.GameRequest.header:type_name -> common.PacketHeader
-	3, // 1: gameRPC.GameResponse.code:type_name -> common.ErrorCode
-	0, // 2: gameRPC.GameRPC.Call:input_type -> gameRPC.GameRequest
-	1, // 3: gameRPC.GameRPC.Call:output_type -> gameRPC.GameResponse
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 0: gameRPC.JoinReq.header:type_name -> common.PacketHeader
+	7, // 1: gameRPC.JoinResp.code:type_name -> common.ErrorCode
+	6, // 2: gameRPC.QuitReq.header:type_name -> common.PacketHeader
+	7, // 3: gameRPC.QuitResp.code:type_name -> common.ErrorCode
+	6, // 4: gameRPC.MsgReq.header:type_name -> common.PacketHeader
+	7, // 5: gameRPC.MsgResp.code:type_name -> common.ErrorCode
+	0, // 6: gameRPC.GameRPC.OnPlayerJoin:input_type -> gameRPC.JoinReq
+	2, // 7: gameRPC.GameRPC.OnPlayerQuit:input_type -> gameRPC.QuitReq
+	4, // 8: gameRPC.GameRPC.OnMessage:input_type -> gameRPC.MsgReq
+	1, // 9: gameRPC.GameRPC.OnPlayerJoin:output_type -> gameRPC.JoinResp
+	3, // 10: gameRPC.GameRPC.OnPlayerQuit:output_type -> gameRPC.QuitResp
+	5, // 11: gameRPC.GameRPC.OnMessage:output_type -> gameRPC.MsgResp
+	9, // [9:12] is the sub-list for method output_type
+	6, // [6:9] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_gameRPC_game_proto_init() }
@@ -193,7 +409,7 @@ func file_api_proto_gameRPC_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_gameRPC_game_proto_rawDesc), len(file_api_proto_gameRPC_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

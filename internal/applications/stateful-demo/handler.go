@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"time"
 
-	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
+	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/framework"
 )
 
-// Handler 實作 GameServiceServer 介面
+// Handler 實作 framework.GameHandler 介面
 type Handler struct {
-	gameRPC.UnimplementedGameRPCServer
+	framework.BaseHandler
 	host string
 }
 
@@ -22,30 +22,58 @@ func NewHandler(host string) *Handler {
 	}
 }
 
-// Call 處理這來自 Connector 的請求
-func (h *Handler) Call(ctx context.Context, req *gameRPC.GameRequest) (*gameRPC.GameResponse, error) {
+// OnMessage 處理這來自 Connector 的請求
+func (h *Handler) OnMessage(ctx context.Context, session *framework.Session, payload []byte) ([]byte, error) {
 	// 取得 Payload (假設內容是字串)
-	payloadStr := string(req.Payload)
+	payloadStr := string(payload)
 
-	slog.Info("Demo Handler Received",
-		"user_id", req.Header.UserId,
-		"req_id", req.Header.ReqId,
+	slog.Info("Stateful-Demo Service Received",
+		"user_id", session.UserID,
+		"session_id", session.SessionID,
 		"payload", payloadStr,
 	)
 
 	echo := echoResponse{
 		Host:    h.host,
-		Payload: "Hello Echo!!!!12345",
+		Payload: "Hello Echo from Stateful!!!! " + payloadStr,
 	}
 	jsonBytes, err := json.Marshal(echo)
 	if err != nil {
 		return nil, err
 	}
-	return &gameRPC.GameResponse{
-		Code:         proto.ErrorCode_SUCCESS,
-		Payload:      jsonBytes,
-		ErrorMessage: "",
-	}, nil
+	return jsonBytes, nil
+}
+
+// OnJoin 處理玩家進入
+func (h *Handler) OnJoin(ctx context.Context, session *framework.Session) error {
+	slog.Info("Player Joined Stateful Service",
+		"user_id", session.UserID,
+		"session_id", session.SessionID,
+		"connector", session.ConnectorHost,
+	)
+
+	// 一秒後送給他message
+	go func() {
+		time.Sleep(time.Second)
+
+		// 使用 Session.Send 發送訊息
+		ctx := context.Background()
+		err := session.Send(ctx, []byte("Welcome! This is Stateful Service"))
+		if err != nil {
+			slog.Warn("PlayerJoinedStatefulService: SendMessage failed", "error", err)
+		}
+	}()
+
+	return nil
+}
+
+// OnQuit 處理玩家離開
+func (h *Handler) OnQuit(ctx context.Context, session *framework.Session) error {
+	slog.Info("Player Quit Stateful Service",
+		"user_id", session.UserID,
+		"session_id", session.SessionID,
+	)
+	return nil
 }
 
 type echoResponse struct {

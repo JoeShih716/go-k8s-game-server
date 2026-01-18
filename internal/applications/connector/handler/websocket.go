@@ -15,23 +15,25 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/protocol"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
-	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
+	pkggrpc "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )
 
 // WebsocketHandler 實作 wss.Subscriber 介面，處理 WebSocket 事件
 type WebsocketHandler struct {
 	sessionMgr    *session.Manager
-	grpcPool      *grpcpkg.Pool
+	grpcPool      *pkggrpc.Pool
 	centralClient *rpcsdk.Client
+	endpoint      string
 }
 
 // NewWebsocketHandler 建立 WebSocket 事件處理器
-func NewWebsocketHandler(mgr *session.Manager, pool *grpcpkg.Pool, central *rpcsdk.Client) *WebsocketHandler {
+func NewWebsocketHandler(mgr *session.Manager, pool *pkggrpc.Pool, central *rpcsdk.Client, endpoint string) *WebsocketHandler {
 	return &WebsocketHandler{
 		sessionMgr:    mgr,
 		grpcPool:      pool,
 		centralClient: central,
+		endpoint:      endpoint,
 	}
 }
 
@@ -58,6 +60,67 @@ func (h *WebsocketHandler) OnDisconnect(conn wss.Client) {
 	// 清理 Timer
 	h.stopTimer(conn, "login_timer")
 	h.stopTimer(conn, "enter_game_timer")
+
+	// 若已在遊戲中，通知 Game Server 玩家離開
+	var targetEndpoint string
+
+	// 1. 嘗試取得固定路由 (Stateful)
+	if target, ok := conn.GetTag("target_endpoint"); ok {
+		if endpoint, ok := target.(string); ok && endpoint != "" {
+			targetEndpoint = endpoint
+		}
+	}
+
+	// 2. 若無固定路由，嘗試取得 GameID 進行動態路由 (Stateless)
+	if targetEndpoint == "" {
+		if gameIDStr, ok := conn.GetTag("current_game_id"); ok {
+			var gameID int
+			if _, err := fmt.Sscanf(gameIDStr.(string), "%d", &gameID); err == nil {
+				// 嘗試向 Central 取得一個可用實例
+				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+				ep, _, err := h.centralClient.GetRoute(ctx, int32(gameID))
+				cancel()
+
+				if err == nil && ep != "" {
+					targetEndpoint = ep
+					slog.Debug("Resolved stateless route for OnPlayerQuit", "gameID", gameID, "endpoint", ep)
+				} else {
+					slog.Warn("Failed to resolve route for OnPlayerQuit", "gameID", gameID, "error", err)
+				}
+			}
+		}
+	}
+
+	// 3. 若有目標 Endpoint，發送信號
+	if targetEndpoint != "" {
+		// 非同步通知，避免阻塞斷線流程
+		go func(ep string, uid string) {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			rpcConn, err := h.grpcPool.GetConnection(ep)
+			if err != nil {
+				slog.Warn("Failed to get connection for OnPlayerQuit", "endpoint", ep, "error", err)
+				return
+			}
+			client := gameRPC.NewGameRPCClient(rpcConn)
+			_, err = client.OnPlayerQuit(ctx, &gameRPC.QuitReq{
+				Header: &proto.PacketHeader{
+					ReqId:     fmt.Sprintf("%d", time.Now().UnixNano()),
+					UserId:    uid,
+					SessionId: conn.ID(),
+					Timestamp: time.Now().UnixMilli(),
+				},
+			})
+			if err != nil {
+				slog.Warn("OnPlayerQuit failed", "endpoint", ep, "error", err)
+			} else {
+				slog.Info("OnPlayerQuit sent", "uid", uid, "endpoint", ep)
+			}
+		}(targetEndpoint, h.getUserID(conn))
+	} else {
+		slog.Debug("OnPlayerQuit skipped: no target endpoint found", "id", conn.ID())
+	}
 
 	// 從管理器移除
 	h.sessionMgr.Remove(conn.ID())
@@ -216,14 +279,69 @@ func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client,
 		return
 	}
 
+	// ---------------------------------------------------------
+	// 新增: 通知 Game Server (OnPlayerJoin)
+	// ---------------------------------------------------------
+	// 建立與 Game Server 的連線
+	rpcConn, err := h.grpcPool.GetConnection(endpoint)
+	if err != nil {
+		slog.Error("Connect to Game Server failed", "endpoint", endpoint, "error", err)
+		h.sendError(conn, protocol.ActionEnterGame, "Game Server Unavailable")
+		return
+	}
+	client := gameRPC.NewGameRPCClient(rpcConn)
+
+	joinCtx, joinCancel := context.WithTimeout(ctx, 3*time.Second)
+	defer joinCancel()
+
+	joinResp, err := client.OnPlayerJoin(joinCtx, &gameRPC.JoinReq{
+		Header: &proto.PacketHeader{
+			ReqId:     fmt.Sprintf("%d", time.Now().UnixNano()),
+			UserId:    userID,
+			SessionId: conn.ID(),
+			Timestamp: time.Now().UnixMilli(),
+		},
+		ConnectorHost: h.endpoint,
+	})
+
+	if err != nil {
+		slog.Error("OnPlayerJoin failed", "endpoint", endpoint, "error", err)
+		h.sendError(conn, protocol.ActionEnterGame, "Join Game Failed")
+		return
+	}
+
+	if joinResp.Code != proto.ErrorCode_SUCCESS {
+		slog.Error("OnPlayerJoin refused", "code", joinResp.Code, "msg", joinResp.ErrorMessage)
+		h.sendError(conn, protocol.ActionEnterGame, "Join Game Refused: "+joinResp.ErrorMessage)
+		return
+	}
+	// ---------------------------------------------------------
+
 	// 緩存路由資訊到 Session (Tag)
 	conn.SetTag("current_game_id", fmt.Sprintf("%d", req.GameID))
 	conn.SetTag("service_type", serviceType) // 記錄服務類型
 
 	// 關鍵差異: 只有 STATEFUL 服務才需要 Sticky Session (固定連線)
-	// STATELESS 服務則是每次請求都重新 GetRoute (Round-Robin)
+	// STATELESS 服務則是每次請求都重新 GetRoute (Round-Robin) -> UPDATE: Stateless 也可能需要綁定 Session 讓 OnPlayerQuit 正確運作？
+	// 這裡先維持原樣，但為了讓 OnPlayerQuit 能運作，Stateless 可能也需要記錄 target_endpoint 或是每次 Call 都不需要 Quit?
+	// 根據需求 "JoinResp 成功才 緩存路由資訊到 Session"，這裡已滿足
+	// "之後有狀態的遊戲可以存取下來 game 可以主動rpc 給connector"
+
+	// 為了讓 OnPlayerQuit 能找到目標，如果是 Stateful，必須記住 endpoint
+	// 如果是 Stateless，通常不需要 Quit 通知，或者通知任何一個都可以？
+	// 這裡假設都記錄，如果是 Stateless，GetRoute 每次可能不同，但如果要支援 "斷線通知 Game"，那勢必得由 Connector 記住 "玩家在哪個 Game Pod"
+	// 但 Stateless 通常是隨機路由，玩家狀態不在 Game Pod 上。
+	// **修正**: 只有 ServiceType_STATEFUL 才需要 OnPlayerQuit 通知具體 Pod。
+	// Stateless 服務通常依賴 Central/Redis 狀態，不依賴單機記憶體。
+	// 但依據 User 需求: "斷線時通知game ... 這樣可以讓遊戲知道玩家進出"，這通常針對 Stateful。
+	// 我們先針對 Stateful 記錄 Endpoint。
 	if serviceType == proto.ServiceType_STATEFUL {
 		conn.SetTag("target_endpoint", endpoint)
+	} else {
+		// Stateless 模式下，Connector 可能不鎖定特定 Pod。
+		// 但如果要通知 Quit，就需要鎖定。或者 Stateless 根本不需要處理 Quit。
+		// 先依據現有邏輯，Stateless 不設 target_endpoint Tag，則 OnDisconnect 不會觸發 Quit。
+		// 這符合 Stateless 定義。
 	}
 
 	slog.Info("Enter Game Success", "userID", userID, "gameID", req.GameID, "target", endpoint, "type", serviceType)
@@ -244,10 +362,11 @@ func (h *WebsocketHandler) forwardToBackend(ctx context.Context, conn wss.Client
 	}
 
 	client := gameRPC.NewGameRPCClient(rpcConn)
-	rpcReq := &gameRPC.GameRequest{
+	rpcReq := &gameRPC.MsgReq{
 		Header: &proto.PacketHeader{
 			ReqId:     fmt.Sprintf("%d", time.Now().UnixNano()),
 			UserId:    h.getUserID(conn),
+			SessionId: conn.ID(),
 			Timestamp: time.Now().UnixMilli(),
 		},
 		Payload: msg, // 直接透傳原始 JSON bytes
@@ -257,9 +376,9 @@ func (h *WebsocketHandler) forwardToBackend(ctx context.Context, conn wss.Client
 	callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	rpcResp, err := client.Call(callCtx, rpcReq)
+	rpcResp, err := client.OnMessage(callCtx, rpcReq)
 	if err != nil {
-		slog.Error("RPC Call failed", "target", targetAddr, "error", err)
+		slog.Error("RPC OnMessage failed", "target", targetAddr, "error", err)
 		h.sendError(conn, "forward", "Game Server Error: "+err.Error())
 		return
 	}

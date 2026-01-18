@@ -4,95 +4,113 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 
+	"github.com/JoeShih716/go-k8s-game-server/api/proto/connectorRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/handler"
 	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/session"
-	"github.com/JoeShih716/go-k8s-game-server/internal/config"
+	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )
 
 func main() {
-	// 1. 初始化 Logger
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
+	// 1. 初始化 App (Logger, Config)
+	app := bootstrap.NewApp("connector")
 
-	// 2. 讀取設定
-	env := os.Getenv(config.EnvAppEnv)
-	if env == "" {
-		env = "local"
-	}
-	cfg, err := config.Load(env)
-	if err != nil {
-		slog.Error("Failed to load config", "error", err)
-		os.Exit(1)
-	}
-
-	slog.Info("Starting Connector Service...", "env", env, "port", cfg.App.Port)
-
-	// 3. 初始化 Session Manager
+	// 2. 初始化核心組件
 	sessionMgr := session.NewManager()
 
-	// 4. 初始化 Central Client (The "Brain" Link)
-	centralAddr := cfg.Services["central"] // From config/local.yaml
+	// 3. Central Client
+	centralAddr := app.Config.Services["central"]
 	if centralAddr == "" {
-		centralAddr = "central:9003" // Fallback
+		centralAddr = "central:9003"
 	}
-
 	// 建立 gRPC 連線
-	centralConn, err := grpc.NewClient(centralAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	centralConn, err := grpc.NewClient(centralAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		slog.Error("Failed to connect to Central", "error", err)
 	} else {
 		slog.Info("Connected to Central", "addr", centralAddr)
 	}
-	// 即使連線失敗，client 仍可建立 (gRPC 會自動重連，或在 Call 時報錯)
 	centralClient := rpcsdk.NewClient(centralConn)
 
-
-
-	// 6. 初始化 gRPC Pool
+	// 4. gRPC Pool
 	grpcPool := grpcpkg.NewPool()
-	defer grpcPool.Close()
 
-	// 7. 初始化 WebSocket Handler
-	wsHandler := handler.NewWebsocketHandler(sessionMgr, grpcPool, centralClient)
-
-	// 5. 初始化 WebSocket Server
-	wsConfig := &wss.Config{
-		AllowedOrigins:  cfg.WSS.AllowedOrigins,
-		ReadBufferSize:  cfg.WSS.ReadBufferSize,
-		WriteBufferSize: cfg.WSS.WriteBufferSize,
-		WriteWait:       time.Duration(cfg.WSS.WriteWaitSec) * time.Second,
-		PongWait:        time.Duration(cfg.WSS.PongWaitSec) * time.Second,
-		MaxMessageSize:  cfg.WSS.MaxMessageSize,
+	// 5. WebSocket Handler
+	podIP := app.Config.App.PodIP
+	if podIP == "" {
+		podIP = "127.0.0.1"
+		slog.Warn("POD_IP not set, using default", "ip", podIP)
 	}
-	// 需要傳入 Context 與 Logger
-	wsServer := wss.NewServer(context.Background(), wsConfig, logger)
+	// 決定 gRPC Port (預設 9080)
+	grpcPort := 9080
+	if app.Config.App.GrpcPort != 0 {
+		grpcPort = app.Config.App.GrpcPort
+	}
+	myRPCPoint := fmt.Sprintf("%s:%d", podIP, grpcPort)
+	slog.Info("Connector.. ", "myEndpoint", myRPCPoint)
 
-	// 註冊訂閱者 (監聽連線事件)
+	wsHandler := handler.NewWebsocketHandler(sessionMgr, grpcPool, centralClient, myRPCPoint)
+
+	// 6. WebSocket Server
+	wsConfig := &wss.Config{
+		AllowedOrigins:  app.Config.WSS.AllowedOrigins,
+		ReadBufferSize:  app.Config.WSS.ReadBufferSize,
+		WriteBufferSize: app.Config.WSS.WriteBufferSize,
+		WriteWait:       time.Duration(app.Config.WSS.WriteWaitSec) * time.Second,
+		PongWait:        time.Duration(app.Config.WSS.PongWaitSec) * time.Second,
+		MaxMessageSize:  app.Config.WSS.MaxMessageSize,
+	}
+	wsServer := wss.NewServer(context.Background(), wsConfig, app.Logger)
 	wsServer.Register(wsHandler)
 
-	// 6. 啟動 HTTP Server
-	path := cfg.WSS.Path
+	// 7. HTTP Route
+	path := app.Config.WSS.Path
 	if path == "" {
 		path = "/ws"
 	}
 	http.Handle(path, wsServer)
 
-	addr := fmt.Sprintf(":%d", cfg.App.Port)
-	slog.Info("Listening on", "addr", addr, "path", path)
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		slog.Error("Failed to start server", "error", err)
-		os.Exit(1)
-	}
+	// 8. 啟動服務 (Run)
+	app.Run(func() error {
+		// 8.1 啟動 gRPC Server (Background)
+		go func() {
+			slog.Info("Attempting to start gRPC Server", "port", grpcPort)
+			lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+			if err != nil {
+				// 這裡如果失敗必須 Panic 讓 Pod 重啟，因為這是關鍵服務
+				panic(fmt.Sprintf("Failed to listen gRPC on port %d: %v", grpcPort, err))
+			}
+
+			grpcServer := grpc.NewServer(
+				grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+					MinTime:             5 * time.Second,
+					PermitWithoutStream: true,
+				}),
+			)
+			connectorRPC.RegisterConnectorRPCServer(grpcServer, handler.NewGrpcHandler(sessionMgr))
+
+			slog.Info("ConnectorRPC Listening", "port", grpcPort)
+			if err := grpcServer.Serve(lis); err != nil {
+				slog.Error("Failed to serve gRPC", "error", err)
+			}
+		}()
+
+		// 8.2 啟動 HTTP Server (Blocking)
+		addr := fmt.Sprintf(":%d", app.Config.App.Port)
+		slog.Info("Listening on", "addr", addr, "path", path)
+		return http.ListenAndServe(addr, nil)
+	}, func() {
+		// Cleanup
+		grpcPool.Close()
+	})
 }
