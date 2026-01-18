@@ -337,11 +337,6 @@ func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client,
 	// 我們先針對 Stateful 記錄 Endpoint。
 	if serviceType == proto.ServiceType_STATEFUL {
 		conn.SetTag("target_endpoint", endpoint)
-	} else {
-		// Stateless 模式下，Connector 可能不鎖定特定 Pod。
-		// 但如果要通知 Quit，就需要鎖定。或者 Stateless 根本不需要處理 Quit。
-		// 先依據現有邏輯，Stateless 不設 target_endpoint Tag，則 OnDisconnect 不會觸發 Quit。
-		// 這符合 Stateless 定義。
 	}
 
 	slog.Info("Enter Game Success", "userID", userID, "gameID", req.GameID, "target", endpoint, "type", serviceType)

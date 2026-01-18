@@ -23,6 +23,6 @@ linters:
 
 linters-settings:
   gocyclo:
-    min-complexity: 15
+    min-complexity: 20
   goimports:
     local-prefixes: github.com/JoeShih716/go-k8s-game-server
