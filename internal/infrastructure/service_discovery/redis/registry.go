@@ -165,7 +165,7 @@ func (r *Registry) SelectServiceByGame(ctx context.Context, gameID int32) (strin
 	val, err := r.rds.Get(ctx, metaKey)
 	var sType int32
 	if err == nil {
-		fmt.Sscanf(val, "%d", &sType)
+		_, _ = fmt.Sscanf(val, "%d", &sType)
 	}
 
 	return res, proto.ServiceType(sType), nil

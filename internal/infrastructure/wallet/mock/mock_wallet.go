@@ -7,7 +7,7 @@ import (
 )
 
 // MockWallet 模擬錢包
-type MockWallet struct{
+type MockWallet struct {
 	userBalances map[string]decimal.Decimal
 }
 
