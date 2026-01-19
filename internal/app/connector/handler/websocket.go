@@ -321,19 +321,6 @@ func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client,
 	conn.SetTag("current_game_id", fmt.Sprintf("%d", req.GameID))
 	conn.SetTag("service_type", serviceType) // 記錄服務類型
 
-	// 關鍵差異: 只有 STATEFUL 服務才需要 Sticky Session (固定連線)
-	// STATELESS 服務則是每次請求都重新 GetRoute (Round-Robin) -> UPDATE: Stateless 也可能需要綁定 Session 讓 OnPlayerQuit 正確運作？
-	// 這裡先維持原樣，但為了讓 OnPlayerQuit 能運作，Stateless 可能也需要記錄 target_endpoint 或是每次 Call 都不需要 Quit?
-	// 根據需求 "JoinResp 成功才 緩存路由資訊到 Session"，這裡已滿足
-	// "之後有狀態的遊戲可以存取下來 game 可以主動rpc 給connector"
-
-	// 為了讓 OnPlayerQuit 能找到目標，如果是 Stateful，必須記住 endpoint
-	// 如果是 Stateless，通常不需要 Quit 通知，或者通知任何一個都可以？
-	// 這裡假設都記錄，如果是 Stateless，GetRoute 每次可能不同，但如果要支援 "斷線通知 Game"，那勢必得由 Connector 記住 "玩家在哪個 Game Pod"
-	// 但 Stateless 通常是隨機路由，玩家狀態不在 Game Pod 上。
-	// **修正**: 只有 ServiceType_STATEFUL 才需要 OnPlayerQuit 通知具體 Pod。
-	// Stateless 服務通常依賴 Central/Redis 狀態，不依賴單機記憶體。
-	// 但依據 User 需求: "斷線時通知game ... 這樣可以讓遊戲知道玩家進出"，這通常針對 Stateful。
 	// 我們先針對 Stateful 記錄 Endpoint。
 	if serviceType == proto.ServiceType_STATEFUL {
 		conn.SetTag("target_endpoint", endpoint)

@@ -3,6 +3,8 @@ package redis
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -68,9 +70,12 @@ func (r *Registry) Register(ctx context.Context, req *centralRPC.RegisterRequest
 		gameKey := fmt.Sprintf(KeyGameSet, gameID)
 		err = r.rds.SAdd(ctx, gameKey, req.Endpoint)
 		if err != nil {
-			// 盡最大努力寫入，不因為單一失敗中斷流程，但建議 Log (這裡直接回傳錯)
 			return "", fmt.Errorf("failed to add to game set: %w", err)
 		}
+
+		// 3.1 儲存 GameID -> ServiceType 的映射 (Metadata)
+		metaKey := fmt.Sprintf("game:%d:meta", gameID)
+		_ = r.rds.Set(ctx, metaKey, int32(req.Type), 0)
 	}
 
 	return leaseID, nil
@@ -143,23 +148,96 @@ func (r *Registry) SelectService(ctx context.Context, serviceType proto.ServiceT
 }
 
 // SelectServiceByGame 根據 GameID 隨機挑選一個服務實例
-func (r *Registry) SelectServiceByGame(ctx context.Context, gameID int32) (string, error) {
+func (r *Registry) SelectServiceByGame(ctx context.Context, gameID int32) (string, proto.ServiceType, error) {
 	key := fmt.Sprintf(KeyGameSet, gameID)
 
-	// 隨機取出一個
+	// 1. 隨機取出一個 Endpoint
 	res, err := r.rds.SRandMember(ctx, key)
 	if err != nil {
 		if redis.IsNil(err) {
-			return "", nil // Not found
+			return "", proto.ServiceType_UNKNOWN_SERVICE, nil // Not found
 		}
-		return "", err
+		return "", proto.ServiceType_UNKNOWN_SERVICE, err
 	}
 
-	return res, nil
+	// 2. 取得 ServiceType
+	metaKey := fmt.Sprintf("game:%d:meta", gameID)
+	val, err := r.rds.Get(ctx, metaKey)
+	var sType int32
+	if err == nil {
+		fmt.Sscanf(val, "%d", &sType)
+	}
+
+	return res, proto.ServiceType(sType), nil
 }
 
-// SelectServiceByType 根據 ServiceType 選擇實例 (Optional)
-// Implement ports.ServiceRegistry
-func (r *Registry) SelectServiceByType(ctx context.Context, serviceType proto.ServiceType) (string, error) {
-	return r.SelectService(ctx, serviceType)
+// CleanupDeadServices 清理無效的服務節點 (Zombie Endpoints)
+func (r *Registry) CleanupDeadServices(ctx context.Context) error {
+	// 1. 取得所有活躍的 Leases
+	// 注意: 在生產環境請使用 Scan 代替 Keys 避免阻塞
+	leaseKeys, err := r.rds.Keys(ctx, "services:lease:*")
+	if err != nil {
+		return fmt.Errorf("failed to scan leases: %w", err)
+	}
+
+	validEndpoints := make(map[string]bool)
+	for _, key := range leaseKeys {
+		var data LeaseData
+		// 如果 Lease 剛好過期，GetStruct 會失敗，那麼它就不是 Valid，正確
+		if err := r.rds.GetStruct(ctx, key, &data); err == nil {
+			validEndpoints[data.Endpoint] = true
+		}
+	}
+
+	// 2. 掃描並清理 Service Sets (e.g., services:STATELESS)
+	serviceKeys, err := r.rds.Keys(ctx, "services:*")
+	if err != nil {
+		slog.Warn("Failed to scan service sets", "error", err)
+	} else {
+		for _, key := range serviceKeys {
+			// 排除 lease, metadata 等非 Set 的 Key
+			if strings.Contains(key, ":lease:") {
+				continue
+			}
+
+			members, err := r.rds.SMembers(ctx, key)
+			if err != nil {
+				continue
+			}
+
+			for _, member := range members {
+				if !validEndpoints[member] {
+					slog.Info("Removing zombie service endpoint", "key", key, "endpoint", member)
+					_ = r.rds.SRem(ctx, key, member)
+				}
+			}
+		}
+	}
+
+	// 3. 掃描並清理 Game Sets (e.g., game:10000)
+	gameKeys, err := r.rds.Keys(ctx, "game:*")
+	if err != nil {
+		slog.Warn("Failed to scan game sets", "error", err)
+	} else {
+		for _, key := range gameKeys {
+			// 排除 metadata
+			if strings.Contains(key, ":meta") {
+				continue
+			}
+
+			members, err := r.rds.SMembers(ctx, key)
+			if err != nil {
+				continue
+			}
+
+			for _, member := range members {
+				if !validEndpoints[member] {
+					slog.Info("Removing zombie game endpoint", "key", key, "endpoint", member)
+					_ = r.rds.SRem(ctx, key, member)
+				}
+			}
+		}
+	}
+
+	return nil
 }

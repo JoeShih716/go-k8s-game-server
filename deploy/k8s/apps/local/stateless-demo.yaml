@@ -32,3 +32,5 @@ spec:
               fieldPath: status.podIP
         - name: TZ
           value: "Asia/Taipei"
+        - name: REDIS_ADDR
+          value: "redis:6379"

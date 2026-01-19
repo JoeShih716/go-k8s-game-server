@@ -15,8 +15,11 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/framework"
+	userrepo "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/user/redis"
+	walletrepo "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/wallet/mock"
 	rpcsdk "github.com/JoeShih716/go-k8s-game-server/internal/pkg/client/central"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
+	"github.com/JoeShih716/go-k8s-game-server/pkg/redis"
 )
 
 // GameServerConfig 定義 Game Server 的專屬配置
@@ -67,10 +70,27 @@ func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
 	// 5. gRPC Pool (共用組件)
 	grpcPool := grpcpkg.NewPool()
 
+	// 5.1 Initialize Redis
+	rds, err := redis.NewClient(redis.Config{
+		Addr:     app.Config.Redis.Addr,
+		Password: app.Config.Redis.Password,
+		DB:       app.Config.Redis.DB,
+	})
+	if err != nil {
+		slog.Error("Failed to connect to Redis", "error", err)
+		return // Or panic/os.Exit
+	}
+	defer rds.Close()
+
+	// 5.2 Initialize Services
+	userSvc := userrepo.NewUserService(rds)
+	// TODO: Replace MockWallet with real one or make it configurable
+	walletSvc := walletrepo.NewMockWallet()
+
 	// 6. Framework Server Setup
 	// 判斷是否為 Stateful (根據 ServiceType)
 	isStateful := cfg.ServiceType == proto.ServiceType_STATEFUL
-	gameServer := framework.NewServer(handler, grpcPool, isStateful, cfg.ServiceName)
+	gameServer := framework.NewServer(handler, grpcPool, isStateful, cfg.ServiceName, userSvc, walletSvc)
 
 	// 7. gRPC Server Setup
 	grpcServer := grpc.NewServer(

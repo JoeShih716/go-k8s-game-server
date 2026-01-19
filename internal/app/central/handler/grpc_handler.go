@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/service"
 )
@@ -75,16 +74,13 @@ func (h *GRPCHandler) Login(ctx context.Context, req *centralRPC.LoginRequest) (
 		Success:  true,
 		UserId:   user.ID,
 		Nickname: user.Name,
-		Balance:  fmt.Sprintf("%d", user.Balance), // 這裡要注意: Unit conversion. User.Balance is int64. Proto needs Decimal string?
-		// Current User.Balance is int64 (cents), Proto expects string.
-		// If Proto Balance string is "100.00", we need conversion.
-		// Mock implementation just formatted int64.
+		Balance:  fmt.Sprintf("%d", user.Balance),
 	}, nil
 }
 
 // GetRoute 取得路由
 func (h *GRPCHandler) GetRoute(ctx context.Context, req *centralRPC.GetRouteRequest) (*centralRPC.GetRouteResponse, error) {
-	endpoint, err := h.svc.GetGameServerEndpoint(ctx, req.GameId)
+	endpoint, sType, err := h.svc.GetGameServerEndpoint(ctx, req.GameId)
 	if err != nil {
 		slog.Error("Failed to lookup service for game", "game_id", req.GameId, "error", err)
 		return nil, fmt.Errorf("internal server error")
@@ -95,9 +91,8 @@ func (h *GRPCHandler) GetRoute(ctx context.Context, req *centralRPC.GetRouteRequ
 		return nil, fmt.Errorf("service not found for game %d", req.GameId)
 	}
 
-	// 暫定 Type 為 STATELESS，若需精確需擴充 GetGameServerEndpoint 回傳 Metadata
 	return &centralRPC.GetRouteResponse{
 		TargetEndpoint: endpoint,
-		Type:           proto.ServiceType_STATELESS,
+		Type:           sType,
 	}, nil
 }

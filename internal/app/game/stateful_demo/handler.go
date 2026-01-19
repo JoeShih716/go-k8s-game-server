@@ -23,13 +23,13 @@ func NewHandler(host string) *Handler {
 }
 
 // OnMessage 處理這來自 Connector 的請求
-func (h *Handler) OnMessage(ctx context.Context, session *framework.Session, payload []byte) ([]byte, error) {
+func (h *Handler) OnMessage(ctx context.Context, peer *framework.Peer, payload []byte) ([]byte, error) {
 	// 取得 Payload (假設內容是字串)
 	payloadStr := string(payload)
 
 	slog.Info("Stateful-Demo Service Received",
-		"user_id", session.UserID,
-		"session_id", session.SessionID,
+		"user_id", peer.User.ID,
+		"session_id", peer.SessionID,
 		"payload", payloadStr,
 	)
 
@@ -45,20 +45,23 @@ func (h *Handler) OnMessage(ctx context.Context, session *framework.Session, pay
 }
 
 // OnJoin 處理玩家進入
-func (h *Handler) OnJoin(ctx context.Context, session *framework.Session) error {
+func (h *Handler) OnJoin(ctx context.Context, peer *framework.Peer) error {
 	slog.Info("Player Joined Stateful Service",
-		"user_id", session.UserID,
-		"session_id", session.SessionID,
-		"connector", session.ConnectorHost,
+		"user_id", peer.User.ID,
+		"session_id", peer.SessionID,
+		"connector", peer.ConnectorHost,
 	)
 
 	// 一秒後送給他message
 	go func() {
 		time.Sleep(time.Second)
 
-		// 使用 Session.Send 發送訊息
+		// 使用 peer.Send 發送訊息
 		ctx := context.Background()
-		err := session.Send(ctx, []byte("Welcome! This is Stateful Service"))
+		userID := peer.User.ID
+		userName := peer.User.Name
+		balance := peer.User.Balance
+		err := peer.Send(ctx, []byte("Welcome! This is Stateful Service"+"\n"+"User ID: "+userID+"\n"+"User Name: "+userName+"\n"+"Balance: "+balance.String()))
 		if err != nil {
 			slog.Warn("PlayerJoinedStatefulService: SendMessage failed", "error", err)
 		}
@@ -68,10 +71,10 @@ func (h *Handler) OnJoin(ctx context.Context, session *framework.Session) error 
 }
 
 // OnQuit 處理玩家離開
-func (h *Handler) OnQuit(ctx context.Context, session *framework.Session) error {
+func (h *Handler) OnQuit(ctx context.Context, peer *framework.Peer) error {
 	slog.Info("Player Quit Stateful Service",
-		"user_id", session.UserID,
-		"session_id", session.SessionID,
+		"user_id", peer.User.ID,
+		"session_id", peer.SessionID,
 	)
 	return nil
 }

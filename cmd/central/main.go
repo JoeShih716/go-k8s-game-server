@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net"
@@ -14,11 +15,10 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/handler"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/service"
-	persistence "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/persistence/mysql"
 	registry "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/service_discovery/redis"
+	user "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/user/redis"
 	wallet "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/wallet/mock"
 	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
-	"github.com/JoeShih716/go-k8s-game-server/pkg/mysql"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/redis"
 )
 
@@ -37,30 +37,42 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 3. 初始化 MySQL
-	db, err := mysql.NewClient(mysql.Config{
-		User:     app.Config.MySQL.User,
-		Password: app.Config.MySQL.Password,
-		Host:     app.Config.MySQL.Host,
-		Port:     app.Config.MySQL.Port,
-		DBName:   app.Config.MySQL.DBName,
-		LogLevel: "error", // Default log level
-	})
-	if err != nil {
-		slog.Error("Failed to connect to MySQL", "error", err)
-		os.Exit(1)
-	}
-	slog.Info("Database connected", "db", app.Config.MySQL.DBName)
+	// 3. 初始化 MySQL 暫時先不使用mysql
+
+	// db, err := mysql.NewClient(mysql.Config{
+	// 	User:     app.Config.MySQL.User,
+	// 	Password: app.Config.MySQL.Password,
+	// 	Host:     app.Config.MySQL.Host,
+	// 	Port:     app.Config.MySQL.Port,
+	// 	DBName:   app.Config.MySQL.DBName,
+	// 	LogLevel: "error", // Default log level
+	// })
+	// if err != nil {
+	// 	slog.Error("Failed to connect to MySQL", "error", err)
+	// 	os.Exit(1)
+	// }
+	// slog.Info("Database connected", "db", app.Config.MySQL.DBName)
 
 	// 4. 初始化核心組件 (Clean Architecture Wiring)
 	// Infrastructure Layer
-	reg := registry.NewRedisRegistry(rds)
-	userRepo := persistence.NewUserRepository(db) // internal/infrastructure/persistence/mysql
-	mockWallet := wallet.NewMockWallet()          // internal/infrastructure/wallet/
+	registry := registry.NewRedisRegistry(rds)
+	userService := user.NewUserService(rds)
+	mockWallet := wallet.NewMockWallet()
 
 	// App Layer
 	// CentralService 組裝了所需的 Ports (UserRepo, Wallet, Registry)
-	svc := service.NewCentralService(userRepo, mockWallet, reg, app.Logger)
+	svc := service.NewCentralService(userService, mockWallet, registry, app.Logger)
+
+	// 任務: 定期清理 Zombie Services (每 30 秒)
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := registry.CleanupDeadServices(context.Background()); err != nil {
+				slog.Warn("CleanupDeadServices failed", "error", err)
+			}
+		}
+	}()
 
 	// Handler Layer
 	// GRPCHandler 負責 Protocol (gRPC) 到 Service 的轉接

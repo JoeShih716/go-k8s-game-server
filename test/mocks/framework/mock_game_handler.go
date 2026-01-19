@@ -42,44 +42,44 @@ func (m *MockGameHandler) EXPECT() *MockGameHandlerMockRecorder {
 }
 
 // OnJoin mocks base method.
-func (m *MockGameHandler) OnJoin(ctx context.Context, session *framework.Session) error {
+func (m *MockGameHandler) OnJoin(ctx context.Context, peer *framework.Peer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnJoin", ctx, session)
+	ret := m.ctrl.Call(m, "OnJoin", ctx, peer)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OnJoin indicates an expected call of OnJoin.
-func (mr *MockGameHandlerMockRecorder) OnJoin(ctx, session any) *gomock.Call {
+func (mr *MockGameHandlerMockRecorder) OnJoin(ctx, peer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnJoin", reflect.TypeOf((*MockGameHandler)(nil).OnJoin), ctx, session)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnJoin", reflect.TypeOf((*MockGameHandler)(nil).OnJoin), ctx, peer)
 }
 
 // OnMessage mocks base method.
-func (m *MockGameHandler) OnMessage(ctx context.Context, session *framework.Session, payload []byte) ([]byte, error) {
+func (m *MockGameHandler) OnMessage(ctx context.Context, peer *framework.Peer, payload []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnMessage", ctx, session, payload)
+	ret := m.ctrl.Call(m, "OnMessage", ctx, peer, payload)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // OnMessage indicates an expected call of OnMessage.
-func (mr *MockGameHandlerMockRecorder) OnMessage(ctx, session, payload any) *gomock.Call {
+func (mr *MockGameHandlerMockRecorder) OnMessage(ctx, peer, payload any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnMessage", reflect.TypeOf((*MockGameHandler)(nil).OnMessage), ctx, session, payload)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnMessage", reflect.TypeOf((*MockGameHandler)(nil).OnMessage), ctx, peer, payload)
 }
 
 // OnQuit mocks base method.
-func (m *MockGameHandler) OnQuit(ctx context.Context, session *framework.Session) error {
+func (m *MockGameHandler) OnQuit(ctx context.Context, peer *framework.Peer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnQuit", ctx, session)
+	ret := m.ctrl.Call(m, "OnQuit", ctx, peer)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OnQuit indicates an expected call of OnQuit.
-func (mr *MockGameHandlerMockRecorder) OnQuit(ctx, session any) *gomock.Call {
+func (mr *MockGameHandlerMockRecorder) OnQuit(ctx, peer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnQuit", reflect.TypeOf((*MockGameHandler)(nil).OnQuit), ctx, session)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnQuit", reflect.TypeOf((*MockGameHandler)(nil).OnQuit), ctx, peer)
 }

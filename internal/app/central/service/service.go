@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/ports"
@@ -13,19 +14,21 @@ import (
 // CentralService 負責中央核心業務 (使用者管理、登入、遊戲路由)
 // 它組裝了各種 Repository 和 Service (Domain Ports)
 type CentralService struct {
-	userRepo  ports.UserRepository
+	userSvc   ports.UserService
 	walletSvc ports.WalletService
 	registry  ports.ServiceRegistry
 	logger    *slog.Logger
+	counterID int
 }
 
 // NewCentralService 建立 Central Service
-func NewCentralService(userRepo ports.UserRepository, walletSvc ports.WalletService, registry ports.ServiceRegistry, logger *slog.Logger) *CentralService {
+func NewCentralService(userRepo ports.UserService, walletSvc ports.WalletService, registry ports.ServiceRegistry, logger *slog.Logger) *CentralService {
 	return &CentralService{
-		userRepo:  userRepo,
+		userSvc:   userRepo,
 		walletSvc: walletSvc,
 		registry:  registry,
 		logger:    logger,
+		counterID: 100000,
 	}
 }
 
@@ -45,7 +48,7 @@ func (s *CentralService) DeregisterService(ctx context.Context, leaseID string) 
 	return s.registry.Deregister(ctx, leaseID)
 }
 
-func (s *CentralService) GetGameServerEndpoint(ctx context.Context, gameID int32) (string, error) {
+func (s *CentralService) GetGameServerEndpoint(ctx context.Context, gameID int32) (string, proto.ServiceType, error) {
 	return s.registry.SelectServiceByGame(ctx, gameID)
 }
 
@@ -57,32 +60,28 @@ func (s *CentralService) GetGameServerEndpoint(ctx context.Context, gameID int32
 // 回傳 User 實體與可能發生的錯誤
 func (s *CentralService) Login(ctx context.Context, token string) (*domain.User, error) {
 	// 1. 驗證 Token (這裡暫時模擬，實際應呼叫 Auth Service 或 JWT verify)
-	if token == "invalid-token" {
+	if token == "" {
 		return nil, domain.ErrInvalidToken
 	}
-
-	// 範例：假設 Token 就是 UserID 或 Username，這裡做簡單模擬
-	// 在真實場景中，應該從 Token 解析出 UserID
-	userID := token // Mock
-
+	var user *domain.User
 	// 2. 查找使用者
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userSvc.GetUser(ctx, token)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-
-	// 3. 如果使用者不存在，自動註冊 (Auto-Register)
-	if user == nil {
-		s.logger.Info("User not found, registering new user", "user_id", userID)
-		newUser := domain.NewUser(userID, "Guest-"+userID) // 預設名稱
-		// 給點初始錢
-		// 注意: domain.User.Balance 是 int64 in cents, WalletService 使用 Decimal
-		// 這裡假設 Create 後，WalletService 會負責初始金額，或者我們在此呼叫 Deposit
-
-		if err := s.userRepo.Create(ctx, newUser); err != nil {
-			return nil, fmt.Errorf("failed to create user: %w", err)
+		// 3. 如果使用者不存在，自動註冊 (Auto-Register)
+		if err == ports.ErrUserNotFound {
+			// 3.1. 建立使用者
+			userID := fmt.Sprintf("%d", s.counterID)
+			userName := fmt.Sprintf("guest-%d", s.counterID)
+			s.counterID++
+			user = domain.NewUser(userID, userName)
+			// 3.2. 建立使用者
+			err = s.userSvc.CreateGuestUser(ctx, token, user)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
 		}
-		user = newUser
 	}
 
 	// 4. 更新餘額快照 (Wallet Service -> User Entity)

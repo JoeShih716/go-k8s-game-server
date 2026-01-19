@@ -42,6 +42,20 @@ func (m *MockServiceRegistry) EXPECT() *MockServiceRegistryMockRecorder {
 	return m.recorder
 }
 
+// CleanupDeadServices mocks base method.
+func (m *MockServiceRegistry) CleanupDeadServices(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CleanupDeadServices", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CleanupDeadServices indicates an expected call of CleanupDeadServices.
+func (mr *MockServiceRegistryMockRecorder) CleanupDeadServices(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanupDeadServices", reflect.TypeOf((*MockServiceRegistry)(nil).CleanupDeadServices), ctx)
+}
+
 // Deregister mocks base method.
 func (m *MockServiceRegistry) Deregister(ctx context.Context, leaseID string) error {
 	m.ctrl.T.Helper()
@@ -86,31 +100,17 @@ func (mr *MockServiceRegistryMockRecorder) Register(ctx, req any) *gomock.Call {
 }
 
 // SelectServiceByGame mocks base method.
-func (m *MockServiceRegistry) SelectServiceByGame(ctx context.Context, gameID int32) (string, error) {
+func (m *MockServiceRegistry) SelectServiceByGame(ctx context.Context, gameID int32) (string, proto.ServiceType, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SelectServiceByGame", ctx, gameID)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(proto.ServiceType)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // SelectServiceByGame indicates an expected call of SelectServiceByGame.
 func (mr *MockServiceRegistryMockRecorder) SelectServiceByGame(ctx, gameID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectServiceByGame", reflect.TypeOf((*MockServiceRegistry)(nil).SelectServiceByGame), ctx, gameID)
-}
-
-// SelectServiceByType mocks base method.
-func (m *MockServiceRegistry) SelectServiceByType(ctx context.Context, serviceType proto.ServiceType) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SelectServiceByType", ctx, serviceType)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SelectServiceByType indicates an expected call of SelectServiceByType.
-func (mr *MockServiceRegistryMockRecorder) SelectServiceByType(ctx, serviceType any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectServiceByType", reflect.TypeOf((*MockServiceRegistry)(nil).SelectServiceByType), ctx, serviceType)
 }

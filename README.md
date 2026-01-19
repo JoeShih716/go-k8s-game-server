@@ -5,7 +5,7 @@
 [![Docker](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-ready-blue)](https://kubernetes.io/)
 
-打造一個生產級的雲原生遊戲伺服器樣板 (Boilerplate) 與框架。
+打造一個生產級的雲原生遊戲伺服器樣板與框架。
 本專案採用 **"Engine & Cartridge"** 設計模式，將「伺服器底層 (Engine)」與「遊戲邏輯 (Content)」分離，並引入 **Game Framework** 簡化開發。
 
 ## 核心特色 (Features)
@@ -27,6 +27,12 @@
 
 ## 架構概覽 (Architecture)
 
+### 設計原則 (Design Principles)
+本專案嚴格遵循 **Clean Architecture (洋蔥架構)**，將業務邏輯與基礎設施分離：
+- **Core Layer (Framework & Domain)**: 定義核心邏輯、介面 (Ports) 與實體 (Entities)。不依賴任何外部套件。
+- **Application Layer (Services & Uses Cases)**: 實作具體的業務流程 (e.g., Central Service Login, Game Handler)。
+- **Infrastructure Layer (Adapters)**: 實作 Core 定義的介面，對接外部系統 (Redis, gRPC, WebSocket)。
+
 ### 核心服務
 1.  **Connector (智慧網關)**:
     - 處理 WebSocket 長連線。
@@ -34,51 +40,49 @@
     - 支援 `ConnectorRPC`，允許遊戲服務主動推送訊息 (Push) 或踢除玩家 (Kick)。
 2.  **Central (中央控制)**:
     - 服務註冊與發現 (Service Registry via Redis)。
-    - 玩家驗證 (Authentication) 與錢包整合 (Mock Wallet)。
+    - 玩家驗證與管理 (User Service via Redis)。
+    - 錢包整合 (Wallet Service)。
 3.  **Game Services (遊戲邏輯)**:
-    - **Stateless Demo**: 實作類似老虎機的 Request-Response 邏輯，使用短暫 Session。
-    - **Stateful Demo**: 實作類似戰鬥房的 Persistent Session 邏輯，支援廣播與狀態維護。
+    - **Stateless Demo**: 實作類似老虎機的 Request-Response 邏輯。
+    - **Stateful Demo**: 實作類似戰鬥房的 Persistent Connection 邏輯，支援廣播。
+
+### 遊戲框架 (Game Framework)
+- **Peer Concept**: 使用 `Peer` 取代 Session，代表「連線中的玩家」。
+    - 每個 `Peer` 皆持有完整的 `domain.User` 資訊 (ID, Name, Balance)。
+    - Framework 自動在玩家進入 (OnJoin) 時注入使用者資料與最新錢包餘額。
+- **Injection**: 採用 Dependency Injection，將 `UserService` 與 `WalletService` 注入框架。
 
 ### 目錄結構 (Directory Structure)
 
 ```text
 go-k8s-game-server/
-├── cmd/                        # [部署入口] (Main Applications)
+├── cmd/                        # [部署入口] Wires dependencies
 │   ├── central/                # -> 中央服務
 │   ├── connector/              # -> 網關服務
-│   ├── stateless/              # -> 無狀態遊戲入口 (Demo)
-│   └── stateful/               # -> 有狀態遊戲入口 (Demo)
+│   └── stateful/               # -> 有狀態遊戲入口
 │
-├── internal/                   # [內部核心] (Private Code)
-│   ├── applications/           # -> 具體業務邏輯 (Central, Connector, Demos)
-│   ├── config/                 # -> 配置加載 (Config.yaml + Env Override)
-│   ├── core/                   # -> 核心定義
-│   └── pkg/                    # -> 內部共用套件
-│       ├── bootstrap/          #    -> 應用啟動器 (App Lifecycle)
-│       └── framework/          #    -> 遊戲伺服器框架 (Session, Server)
+├── internal/                   # [內部核心]
+│   ├── app/                    # -> Application Layer (Use Cases)
+│   │   ├── central/            #    -> Central 業務邏輯
+│   │   └── game/               #    -> 各遊戲 Handler 實作
+│   ├── core/                   # -> Core Layer (Domain logic)
+│   │   ├── domain/             #    -> 實體 (User, wallet)
+│   │   ├── framework/          #    -> 遊戲框架 (Server, Peer)
+│   │   └── ports/              #    -> 介面定義 (Repository Interfaces)
+│   └── infrastructure/         # -> Infrastructure Layer
+│       ├── persistence/        #    -> 資料庫實作 (Redis)
+│       └── service_discovery/  #    -> 服務發現實作
 │
-├── pkg/                        # [通用工具庫] (Public Libraries)
-│   ├── grpc/                   # -> gRPC Client Pool
-│   ├── mysql/                  # -> MySQL Client (GORM)
-│   ├── redis/                  # -> Redis Client
-│   └── wss/                    # -> WebSocket Framework
-│
-├── api/proto/                  # [通訊協議] (Protocol Buffers)
-│   ├── centralRPC/             # -> Game <-> Central
-│   ├── connectorRPC/           # -> Game -> Connector (Push/Kick)
-│   └── gameRPC/                # -> Connector -> Game (Logic)
-│
-└── deploy/                     # [部署配置]
-    ├── k8s/                    # -> Kubernetes Manifests
-    └── docker-compose.yaml     # -> Local Development
+└── pkg/                        # [通用工具庫]
+    ├── grpc/                   # -> gRPC Pools
+    └── redis/                  # -> Redis Client Helper
 ```
 
 ## 快速開始 (Getting Started)
 
 ### 先決條件 (Prerequisites)
 - Docker & Docker Compose
-- Go 1.23+
-- Make (Optional)
+- Go 1.25+
 
 ### 本地開發 (Docker Compose)
 這是最快的啟動方式，支援熱重載。
@@ -87,65 +91,24 @@ go-k8s-game-server/
     ```bash
     docker-compose up --build
     ```
-    此指令會啟動 Redis, MySQL, Central, Connector 以及 Demo Services。
+    此指令會啟動 Redis, Central, Connector 以及 Demo Services。
+    *(MySQL 為選用，目前主要使用 Redis 進行資料存取)*
 
 2.  **測試連線**:
     開啟瀏覽器訪問 `http://localhost:8080` (內建 WebSocket 測試工具)。
-    - **Login**: 輸入 UserID。
+    - **Login**: 輸入任意 UserID (系統會自動建立訪客帳號)。
     - **Connect**: 建立 WebSocket 連線。
     - **Enter Game**: 輸入 GameID (Stateless: 10000, Stateful: 20000)。
 
-### 本地 Kubernetes 開發 (Local K8s)
-支援將應用部署至 Orbstack, Docker Desktop K8s 或 Kind。
+### 開發指南 (Development Guide)
 
-1.  **建置映像檔**:
-    ```bash
-    # 支援透過 build args 指定不同服務入口
-    docker build -t game-server/central --build-arg SERVICE_PATH=cmd/central -f build/package/Dockerfile.localk8s .
-    docker build -t game-server/connector --build-arg SERVICE_PATH=cmd/connector -f build/package/Dockerfile.localk8s .
-    docker build -t game-server/stateless-demo --build-arg SERVICE_PATH=cmd/stateless/demo -f build/package/Dockerfile.localk8s .
-    docker build -t game-server/stateful-demo --build-arg SERVICE_PATH=cmd/stateful/demo -f build/package/Dockerfile.localk8s .
-    ```
-
-2.  **部署**:
-    ```bash
-    # 1. 基礎設施 (MySQL, Redis)
-    kubectl apply -f deploy/k8s/local-infra/
-
-    # 2. 應用程式
-    kubectl apply -f deploy/k8s/apps/local/
-    ```
-
-3.  **配置更新**:
-    所有服務支援完整的環境變數覆寫，請參考 Kubernetes Yaml 中的 `env` 區塊。
-    - `PORT`: HTTP/WebSocket Port
-    - `GRPC_PORT`: gRPC Port
-    - `MYSQL_HOST`, `MYSQL_USER`...: 資料庫連線資訊
-    - `REDIS_ADDR`: Redis 連線資訊
-
-## 開發指南 (Development Guide)
-
-### 新增一個遊戲服務
-1.  在 `cmd/` 下建立新目錄 (e.g. `cmd/mygame/main.go`)。
-2.  實作 `internal/pkg/framework.GameHandler` 介面：
-    - `OnJoin(ctx, session, payload)`
-    - `OnQuit(ctx, session)`
-    - `OnMessage(ctx, session, payload)`
-3.  在 `main.go` 中使用 `bootstrap.RunGameServer` 啟動：
-    ```go
-    func main() {
-        config := bootstrap.GameServerConfig{
-            ServiceName: "my-game",
-            ServiceType: proto.ServiceType_STATELESS, // 或 STATEFUL
-            GameIDs:     []int32{30000},
-            DefaultPort: 9090,
-        }
-        // Handler 需實作 framework.GameHandler
-        // NewHandler 通常接受 ServiceName 或 Host 以便回應資訊
-        handler := mygame.NewHandler(config.ServiceName)
-        bootstrap.RunGameServer(config, handler)
-    }
-    ```
+#### 新增一個遊戲服務
+1.  在 `cmd/` 下建立新目錄。
+2.  實作 `internal/core/framework.GameHandler` 介面：
+    - `OnJoin(ctx, peer)`: 可透過 `peer.User` 存取玩家資訊。
+    - `OnQuit(ctx, peer)`
+    - `OnMessage(ctx, peer, payload)`
+3.  使用 `bootstrap.RunGameServer` 啟動，Framework 會自動處理依賴注入。
 
 ### CI/CD
 本專案包含 GitHub Actions Workflow (`.github/workflows/ci.yaml`)，在 Push 或 PR 時自動執行：

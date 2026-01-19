@@ -22,9 +22,9 @@ type ServiceRegistry interface {
 	Deregister(ctx context.Context, leaseID string) error
 
 	// SelectServiceByGame 根據 GameID 選擇一個合適的服務實例 (負載均衡)
-	// 回傳 Endpoint (host:port)
-	SelectServiceByGame(ctx context.Context, gameID int32) (string, error)
+	// 回傳 Endpoint (host:port) 與 ServiceType
+	SelectServiceByGame(ctx context.Context, gameID int32) (string, proto.ServiceType, error)
 
-	// SelectServiceByType 根據 ServiceType 選擇實例 (Optional)
-	SelectServiceByType(ctx context.Context, serviceType proto.ServiceType) (string, error)
+	// CleanupDeadServices 清理無效的服務節點 (Zombie Endpoints)
+	CleanupDeadServices(ctx context.Context) error
 }

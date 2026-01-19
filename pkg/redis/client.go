@@ -194,6 +194,11 @@ func (c *Client) Expire(ctx context.Context, key string, expiration time.Duratio
 	return c.rdb.Expire(ctx, key, expiration).Err()
 }
 
+// Keys 查找符合模式的 Key
+func (c *Client) Keys(ctx context.Context, pattern string) ([]string, error) {
+	return c.rdb.Keys(ctx, pattern).Result()
+}
+
 // -----------------------------------------------------------
 // Set Commands
 // -----------------------------------------------------------
