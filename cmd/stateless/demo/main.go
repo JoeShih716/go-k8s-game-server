@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	demo "github.com/JoeShih716/go-k8s-game-server/internal/applications/stateless-demo"
+	demo "github.com/JoeShih716/go-k8s-game-server/internal/app/game/stateless_demo"
 	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
 )
 

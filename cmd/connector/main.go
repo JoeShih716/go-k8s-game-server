@@ -13,10 +13,10 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/connectorRPC"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/handler"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/connector/session"
+	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/handler"
+	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
+	rpcsdk "github.com/JoeShih716/go-k8s-game-server/internal/pkg/client/central"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )

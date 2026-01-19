@@ -12,6 +12,8 @@ require (
 	gorm.io/gorm v1.31.1
 )
 
+require go.uber.org/mock v0.6.0
+
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

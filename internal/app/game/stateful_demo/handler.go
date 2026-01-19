@@ -1,0 +1,82 @@
+package statefuldemo
+
+import (
+	"context"
+	"encoding/json"
+	"log/slog"
+	"time"
+
+	"github.com/JoeShih716/go-k8s-game-server/internal/core/framework"
+)
+
+// Handler 實作 framework.GameHandler 介面
+type Handler struct {
+	framework.BaseHandler
+	host string
+}
+
+// NewHandler 建立一個新的 Demo Handler
+func NewHandler(host string) *Handler {
+	return &Handler{
+		host: host,
+	}
+}
+
+// OnMessage 處理這來自 Connector 的請求
+func (h *Handler) OnMessage(ctx context.Context, session *framework.Session, payload []byte) ([]byte, error) {
+	// 取得 Payload (假設內容是字串)
+	payloadStr := string(payload)
+
+	slog.Info("Stateful-Demo Service Received",
+		"user_id", session.UserID,
+		"session_id", session.SessionID,
+		"payload", payloadStr,
+	)
+
+	echo := echoResponse{
+		Host:    h.host,
+		Payload: "Hello Echo from Stateful!!!! " + payloadStr,
+	}
+	jsonBytes, err := json.Marshal(echo)
+	if err != nil {
+		return nil, err
+	}
+	return jsonBytes, nil
+}
+
+// OnJoin 處理玩家進入
+func (h *Handler) OnJoin(ctx context.Context, session *framework.Session) error {
+	slog.Info("Player Joined Stateful Service",
+		"user_id", session.UserID,
+		"session_id", session.SessionID,
+		"connector", session.ConnectorHost,
+	)
+
+	// 一秒後送給他message
+	go func() {
+		time.Sleep(time.Second)
+
+		// 使用 Session.Send 發送訊息
+		ctx := context.Background()
+		err := session.Send(ctx, []byte("Welcome! This is Stateful Service"))
+		if err != nil {
+			slog.Warn("PlayerJoinedStatefulService: SendMessage failed", "error", err)
+		}
+	}()
+
+	return nil
+}
+
+// OnQuit 處理玩家離開
+func (h *Handler) OnQuit(ctx context.Context, session *framework.Session) error {
+	slog.Info("Player Quit Stateful Service",
+		"user_id", session.UserID,
+		"session_id", session.SessionID,
+	)
+	return nil
+}
+
+type echoResponse struct {
+	Host    string `json:"host"`
+	Payload string `json:"payload"`
+}

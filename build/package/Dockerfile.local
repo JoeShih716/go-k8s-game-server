@@ -22,4 +22,4 @@ COPY . .
 EXPOSE 8080
 
 # 啟動 Air
-CMD ["air", "-c", ".air.toml"]
+CMD ["air", "-c", ".air.connector.toml"]

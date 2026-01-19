@@ -44,6 +44,8 @@ install-tools:
 	@echo "正在安裝 Go Protobuf Plugins..."
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	@echo "正在安裝 Mockgen..."
+	go install go.uber.org/mock/mockgen@latest
 	@echo "安裝完成！請確保您的 PATH 包含 \$$(go env GOPATH)/bin"
 
 # 生成 Protobuf 代碼
@@ -52,4 +54,12 @@ gen-proto:
 	@protoc --go_out=. --go_opt=paths=source_relative \
 	        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
 	        api/proto/*.proto api/proto/centralRPC/*.proto api/proto/gameRPC/*.proto api/proto/connectorRPC/*.proto
+	        api/proto/*.proto api/proto/centralRPC/*.proto api/proto/gameRPC/*.proto api/proto/connectorRPC/*.proto
 	@echo "Protobuf 生成完成！"
+
+# 生成 Mock 檔案
+# 會掃描全專案的 go:generate 指令
+gen-mock:
+	@echo "正在生成 Mocks..."
+	@go generate ./...
+	@echo "Mock 生成完成！"

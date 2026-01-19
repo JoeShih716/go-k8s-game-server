@@ -4,8 +4,8 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/stateful-demo-main"
-  cmd = "go build -o ./tmp/stateful-demo-main ./cmd/stateful/demo/main.go"
+  bin = "/tmp/stateful-demo-main"
+  cmd = "go build -o /tmp/stateful-demo-main ./cmd/stateful/demo/main.go"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
@@ -13,7 +13,7 @@ tmp_dir = "tmp"
   exclude_unchanged = false
   follow_symlink = false
   full_bin = ""
-  include_dir = ["cmd/stateful/demo", "internal/applications/stateful-demo", "internal/core", "pkg", "api", "config", "internal/applications/central"]
+  include_dir = ["cmd/stateful/demo", "internal/app/game/stateful_demo", "internal/core", "internal/pkg/client", "pkg", "api", "config"]
   include_ext = ["go", "tpl", "tmpl", "html", "yaml", "proto"]
   kill_delay = "5s"
   log = "build-stateful-demo-errors.log"

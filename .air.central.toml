@@ -4,8 +4,8 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/central-main"
-  cmd = "go build -o ./tmp/central-main ./cmd/central/main.go"
+  bin = "/tmp/central-main"
+  cmd = "go build -o /tmp/central-main ./cmd/central/main.go"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
@@ -13,7 +13,7 @@ tmp_dir = "tmp"
   exclude_unchanged = false
   follow_symlink = false
   full_bin = ""
-  include_dir = ["cmd/central", "internal/applications/central", "internal/core", "pkg", "api", "config"]
+  include_dir = ["cmd/central", "internal/app/central", "internal/core", "internal/infrastructure", "pkg", "api", "config"]
   include_ext = ["go", "tpl", "tmpl", "html", "yaml", "proto"]
   kill_delay = "5s"
   log = "build-central-errors.log"

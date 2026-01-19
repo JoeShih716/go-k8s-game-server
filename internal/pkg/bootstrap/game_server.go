@@ -14,8 +14,8 @@ import (
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/rpcsdk"
-	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/framework"
+	"github.com/JoeShih716/go-k8s-game-server/internal/core/framework"
+	rpcsdk "github.com/JoeShih716/go-k8s-game-server/internal/pkg/client/central"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 )
 

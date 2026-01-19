@@ -3,6 +3,8 @@ package domain
 import (
 	"errors"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 var ErrInvalidToken = errors.New("invalid token")
@@ -11,13 +13,13 @@ var ErrInvalidToken = errors.New("invalid token")
 // 這是最基礎的資料結構，用於在各個服務層之間傳遞使用者資訊。
 // 注意：Balance 為當前餘額快照
 type User struct {
-	ID        string    // 使用者唯一標識符
-	Name      string    // 使用者顯示名稱 (Nickname)
-	Balance   int64     // 餘額 (Snapshot)
-	Avatar    string    // 頭像 URL
-	CreatedAt time.Time // 帳號建立時間
-	UpdatedAt time.Time // 最後更新時間
-	Tags      []string  // 使用者標籤 (例如: "vip", "newbie")
+	ID        string          // 使用者唯一標識符
+	Name      string          // 使用者顯示名稱 (Nickname)
+	Balance   decimal.Decimal // 餘額 (Snapshot)
+	Avatar    string          // 頭像 URL
+	CreatedAt time.Time       // 帳號建立時間
+	UpdatedAt time.Time       // 最後更新時間
+	Tags      []string        // 使用者標籤 (例如: "vip", "newbie")
 }
 
 // NewUser 建立一個新的使用者實例
@@ -35,7 +37,7 @@ func NewUser(id string, name string) *User {
 	return &User{
 		ID:        id,
 		Name:      name,
-		Balance:   0,
+		Balance:   decimal.Zero,
 		Avatar:    "",
 		CreatedAt: now,
 		UpdatedAt: now,

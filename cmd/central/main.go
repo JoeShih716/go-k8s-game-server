@@ -12,10 +12,11 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/auth"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/registry"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/service"
-	"github.com/JoeShih716/go-k8s-game-server/internal/applications/central/wallet"
+	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/handler"
+	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/service"
+	persistence "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/persistence/mysql"
+	registry "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/service_discovery/redis"
+	wallet "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/wallet/mock"
 	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/mysql"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/redis"
@@ -51,11 +52,19 @@ func main() {
 	}
 	slog.Info("Database connected", "db", app.Config.MySQL.DBName)
 
-	// 4. 初始化核心組件
+	// 4. 初始化核心組件 (Clean Architecture Wiring)
+	// Infrastructure Layer
 	reg := registry.NewRedisRegistry(rds)
-	authenticator := auth.NewMockAuthenticator()
-	mockWallet := wallet.NewMockWallet()
-	svc := service.NewService(reg, db, authenticator, mockWallet)
+	userRepo := persistence.NewUserRepository(db) // internal/infrastructure/persistence/mysql
+	mockWallet := wallet.NewMockWallet()          // internal/infrastructure/wallet/
+
+	// App Layer
+	// CentralService 組裝了所需的 Ports (UserRepo, Wallet, Registry)
+	svc := service.NewCentralService(userRepo, mockWallet, reg, app.Logger)
+
+	// Handler Layer
+	// GRPCHandler 負責 Protocol (gRPC) 到 Service 的轉接
+	grpcHandler := handler.NewGRPCHandler(svc)
 
 	// 5. 啟動服務
 	// Central 的預設 Port 是 9003
@@ -77,7 +86,8 @@ func main() {
 				PermitWithoutStream: true,
 			}),
 		)
-		centralRPC.RegisterCentralRPCServer(grpcServer, svc)
+		// Register the new Handler
+		centralRPC.RegisterCentralRPCServer(grpcServer, grpcHandler)
 		reflection.Register(grpcServer)
 
 		slog.Info("Central Service listening", "port", port)
@@ -85,6 +95,6 @@ func main() {
 	}, func() {
 		// Cleanup
 		rds.Close()
-		// db.Close() // GORM db generic interface might need type assertion or sqlDB.Close(), skip for now or add helper
+		// db.Close()
 	})
 }
