@@ -22,8 +22,8 @@ type RedisDBConfig struct {
 type AppConfig struct {
 	Name     string `mapstructure:"name"`
 	Env      string `mapstructure:"env"`
-	Port     int    `mapstructure:"port"`
-	GrpcPort int    `mapstructure:"grpc_port"` // gRPC Server Port (Connector, etc.)
+	Port     int    `mapstructure:"port"`      // HTTP/WebSocket Port (Public Gateway)
+	GrpcPort int    `mapstructure:"grpc_port"` // gRPC Server Port (Internal Communication, Default: 8090)
 	PodIP    string `mapstructure:"-"`         // Pod IP (runtime injected, not from file)
 }
 

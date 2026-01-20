@@ -17,16 +17,19 @@ spec:
       containers:
       - name: central
         image: game-server/central:latest
-        imagePullPolicy: IfNotPresent # For local testing
+        imagePullPolicy: IfNotPresent # 本地測試使用，優先使用本地 Image
         ports:
-        - containerPort: 9003
+        - containerPort: 8090
         env:
         - name: APP_ENV
           value: "local_k8s"
-        - name: PORT
-          value: "9003"
+        # gRPC Port: 內部通訊統一使用 8090
+        - name: GRPC_PORT
+          value: "8090"
+        # Redis 連線設定
         - name: REDIS_ADDR
           value: "redis:6379"
+        # MySQL 連線設定
         - name: MYSQL_HOST
           value: "mysql"
         - name: MYSQL_PORT
@@ -39,16 +42,16 @@ spec:
           value: "game_db"
         - name: TZ
           value: "Asia/Taipei"
-        - name: REDIS_ADDR
-          value: "redis:6379"
 ---
+# Central Service
+# 提供 Cluster 內部的 Load Balancing 與 DNS 解析
 apiVersion: v1
 kind: Service
 metadata:
-  name: central
+  name: central # DNS 名稱: central.default.svc.cluster.local
 spec:
   ports:
-  - port: 9003
-    targetPort: 9003
+  - port: 8090       # Service ClusterIP 暴露的 Port
+    targetPort: 8090 # 後端 Pod 實際監聽的 Port
   selector:
     app: central

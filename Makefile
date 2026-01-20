@@ -1,67 +1,164 @@
-# 變數定義，排除 .git 資料夾
-FIND_EMPTY := find . -type d -empty -not -path "./.git/*"
-# 找出所有包含 .gitkeep 且該資料夾內還有其他檔案的 .gitkeep 檔
-# 目錄內檔案數量 > 1 代表除了 .gitkeep 還有別的東西
-FIND_REDUNDANT_KEEP := find . -name ".gitkeep" -not -path "./.git/*" -exec sh -c 'test $$(ls -A $$(dirname "{}") | wc -l) -gt 1' \; -print
+# ==============================================================================
+# Variables
+# ==============================================================================
+PROJECT_NAME := game-server
 
-.PHONY: lint lint-fix install-lint keep-add keep-clean test install-tools gen-proto gen-mock
+# Docker Image Names
+IMAGE_PREFIX := joe-shih/go-k8s
+CENTRAL_IMAGE := $(IMAGE_PREFIX)-central
+CONNECTOR_IMAGE := $(IMAGE_PREFIX)-connector
+STATELESS_IMAGE := $(IMAGE_PREFIX)-stateless
+STATEFUL_IMAGE := $(IMAGE_PREFIX)-stateful
+TAG ?= latest
 
-# 安裝最新版 golangci-lint
-install-lint:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+# Directories
+DEPLOY_K8S_INFRA := deploy/k8s/local-infra
+DEPLOY_K8S_APPS := deploy/k8s/apps/local
+DOCKERFILE_K8S := build/package/Dockerfile.localk8s
 
-# 執行檢查
-lint:
+# Shell
+SHELL := /bin/bash
+
+# ==============================================================================
+# Help
+# ==============================================================================
+.PHONY: help
+help: ## Display this help message
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+# ==============================================================================
+# Development
+# ==============================================================================
+##@ Development
+
+.PHONY: deps
+deps: ## Download dependencies
+	go mod download
+
+.PHONY: tidy
+tidy: ## Tidy up go.mod
+	go mod tidy
+
+.PHONY: fmt
+fmt: ## Format code
+	go fmt ./...
+
+.PHONY: vet
+vet: ## Run go vet
+	go vet ./...
+
+.PHONY: lint
+lint: ## Run golangci-lint
 	golangci-lint run ./...
 
-# 自動修復
-lint-fix:
-	golangci-lint run --fix ./...
+.PHONY: test
+test: ## Run unit tests with race detector and coverage (internal only)
+	@go test -v -race -coverprofile=coverage.out ./internal/...
+	@go tool cover -func=coverage.out
+	@rm coverage.out
 
-# 為所有空資料夾補上 .gitkeep
-keep-add:
-	@echo "正在為空資料夾補上 .gitkeep..."
-	@$(FIND_EMPTY) -exec touch {}/.gitkeep \;
-	@echo "完成！"
+.PHONY: ci
+ci: lint test ## Run all CI steps (lint + test)
 
-# 檢查並刪除「已經不是空資料夾」中的 .gitkeep
-keep-clean:
-	@echo "正在清理多餘的 .gitkeep 檔案..."
-	@find . -name ".gitkeep" -not -path "./.git/*" | while read -r keepfile; do \
-		dir=$$(dirname "$$keepfile"); \
-		count=$$(ls -A "$$dir" | wc -l); \
-		if [ $$count -gt 1 ]; then \
-			rm "$$keepfile"; \
-			echo "已刪除: $$keepfile"; \
-		fi; \
-	done
-	@echo "清理完成！"
+# ==============================================================================
+# Code Generation
+# ==============================================================================
+##@ Code Generation
 
-# 安裝必要工具 (Protoc + Go Plugins) - 僅限 macOS (Homebrew)
-install-tools:
-	@echo "正在安裝 Protobuf Compiler..."
-	-brew install protobuf
-	@echo "正在安裝 Go Protobuf Plugins..."
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-	@echo "正在安裝 Mockgen..."
-	go install go.uber.org/mock/mockgen@latest
-	@echo "安裝完成！請確保您的 PATH 包含 \$$(go env GOPATH)/bin"
-
-# 生成 Protobuf 代碼
-gen-proto:
-	@echo "正在生成 Protobuf代碼..."
+.PHONY: gen-proto
+gen-proto: ## Generate Protobuf & gRPC code
+	@echo "Generating Protobuf code..."
 	@protoc --go_out=. --go_opt=paths=source_relative \
 	        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
 	        api/proto/*.proto api/proto/centralRPC/*.proto api/proto/gameRPC/*.proto api/proto/connectorRPC/*.proto
-	@echo "Protobuf 生成完成！"
+	@echo "Done!"
 
-# 執行單元測試 (排除自動生成代碼與 main entry)
-test:
-	go test -v -race -cover ./internal/...
-# 生成 Mock 檔案
-# 會掃描全專案的 go:generate 指令
-gen-mock:
-	@echo "正在生成 Mocks..."
+.PHONY: gen-mock
+gen-mock: ## Generate Mocks using go:generate
+	@echo "Generating Mocks..."
 	@go generate ./...
-	@echo "Mock 生成完成！"
+	@echo "Done!"
+
+# ==============================================================================
+# Docker Compose
+# ==============================================================================
+##@ Docker Compose
+
+.PHONY: docker-up
+docker-up: ## Start local dev environment (Air hot-reload)
+	docker-compose up -d --build
+
+.PHONY: docker-down
+docker-down: ## Stop local dev environment
+	docker-compose down
+
+.PHONY: docker-logs
+docker-logs: ## Tail docker-compose logs
+	docker-compose logs -f
+
+# ==============================================================================
+# Kubernetes
+# ==============================================================================
+##@ Kubernetes
+
+# Safety: Allowed contexts for k8s-* commands
+SAFE_CONTEXTS := docker-desktop minikube orbstack kind-kind rancher-desktop
+
+.PHONY: check-context
+check-context:
+	@ctx=$$(kubectl config current-context); \
+	found=0; \
+	for safe in $(SAFE_CONTEXTS); do \
+		if [ "$$ctx" = "$$safe" ]; then found=1; break; fi; \
+	done; \
+	if [ $$found -eq 0 ]; then \
+		echo "\033[0;31m[ERROR] Current context '$$ctx' is NOT in the safe list: [$(SAFE_CONTEXTS)]\033[0m"; \
+		echo "To prevent accidental deployment to production, please switch to a local cluster."; \
+		exit 1; \
+	else \
+		echo "\033[0;32m[INFO] Context '$$ctx' verified as safe.\033[0m"; \
+	fi
+
+.PHONY: k8s-build
+k8s-build: ## Build all Docker images for K8s (Locally)
+	@echo "Building Central..."
+	docker build --build-arg SERVICE_PATH=cmd/central -t $(CENTRAL_IMAGE):$(TAG) -f $(DOCKERFILE_K8S) .
+	@echo "Building Connector..."
+	docker build --build-arg SERVICE_PATH=cmd/connector -t $(CONNECTOR_IMAGE):$(TAG) -f $(DOCKERFILE_K8S) .
+	@echo "Building Stateless Demo..."
+	docker build --build-arg SERVICE_PATH=cmd/stateless/demo -t $(STATELESS_IMAGE):$(TAG) -f $(DOCKERFILE_K8S) .
+	@echo "Building Stateful Demo..."
+	docker build --build-arg SERVICE_PATH=cmd/stateful/demo -t $(STATEFUL_IMAGE):$(TAG) -f $(DOCKERFILE_K8S) .
+	@echo "All images built successfully!"
+
+.PHONY: k8s-apply
+k8s-apply: check-context ## Apply K8s manifests (Infra first, then Apps)
+	@echo "Deploying Infrastructure..."
+	kubectl apply -f $(DEPLOY_K8S_INFRA)
+	@echo "Waiting for Infra (optional pause)..."
+	@sleep 2
+	@echo "Deploying Apps..."
+	kubectl apply -f $(DEPLOY_K8S_APPS)
+	@echo "Done!"
+
+.PHONY: k8s-delete
+k8s-delete: check-context ## Delete K8s resources
+	@echo "Deleting Apps..."
+	-kubectl delete -f $(DEPLOY_K8S_APPS)
+	@echo "Deleting Infrastructure..."
+	-kubectl delete -f $(DEPLOY_K8S_INFRA)
+	@echo "Done!"
+
+# ==============================================================================
+# Tools
+# ==============================================================================
+##@ Tools
+
+.PHONY: install-tools
+install-tools: ## Install required tools (Protoc plugins, Mockgen, Linter)
+	@echo "Installing tools..."
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	go install go.uber.org/mock/mockgen@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@echo "Tools installed!"

@@ -19,30 +19,36 @@ spec:
         image: game-server/connector:latest
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 8080
-        - containerPort: 9080 # gRPC
+        - containerPort: 8080 # WebSocket Port (對外)
+        - containerPort: 8090 # gRPC Port (對內)
         env:
         - name: APP_ENV
           value: "local_k8s"
+        # Central 地址: 透過 K8s Service DNS 解析 (自動負載均衡)
         - name: CENTRAL_ADDR
-          value: "central:9003"
+          value: "central:8090"
+        # 注入 Pod IP: 讓 Connector 知道自己的 IP (用於註冊、識別)
         - name: POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        # gRPC Port: 內部通訊統一使用 8090
         - name: GRPC_PORT
-          value: "9080"
+          value: "8090"
         - name: TZ
           value: "Asia/Taipei"
 ---
+# Connector Service
+# 提供外部連線 (WebSocket/HTTP) 的入口
 apiVersion: v1
 kind: Service
 metadata:
   name: connector
 spec:
-  type: LoadBalancer # 或者 NodePort，取決於本地環境 (Docker Desktop 支援 LB)
+  # LoadBalancer: 在雲端會提供 Public IP，在 Docker Desktop/Orbstack 會映射到 Localhost
+  type: LoadBalancer
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8080       # 外部存取 Port
+    targetPort: 8080 # Pod 內部 WebSocket Port
   selector:
     app: connector

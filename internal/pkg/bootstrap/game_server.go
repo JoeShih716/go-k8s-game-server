@@ -22,10 +22,10 @@ import (
 
 // GameServerConfig 定義 Game Server 的專屬配置
 type GameServerConfig struct {
-	ServiceName string
-	ServiceType proto.ServiceType
-	GameIDs     []int32
-	DefaultPort int
+	ServiceName     string
+	ServiceType     proto.ServiceType
+	GameIDs         []int32
+	DefaultGrpcPort int
 }
 
 // RunGameServer 啟動通用的 Game Server 流程
@@ -34,9 +34,12 @@ func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
 	// 1. 初始化 App
 	app := NewApp(cfg.ServiceName)
 
-	port := cfg.DefaultPort
-	if p := app.Config.App.Port; p != 0 {
+	port := 8090 // Default internal gRPC port
+	if p := app.Config.App.GrpcPort; p != 0 {
 		port = p
+	} else if cfg.DefaultGrpcPort != 0 {
+		// Fallback to legacy default port if GrpcPort is not set (useful for local non-docker run)
+		port = cfg.DefaultGrpcPort
 	}
 
 	// 2. 決定 Host
@@ -48,7 +51,7 @@ func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
 	// 3. 連線 Central
 	centralAddr := app.Config.Services["central"]
 	if centralAddr == "" {
-		centralAddr = "central:9003"
+		centralAddr = "central:8090"
 	}
 
 	conn, err := grpc.NewClient(centralAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))

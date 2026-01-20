@@ -1,11 +1,11 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: StatefulSet # 使用 StatefulSet 以確保 Pod 名稱與順序固定 (stateful-demo-0, stateful-demo-1)
 metadata:
   name: stateful-demo
   labels:
     app: stateful-demo
 spec:
-  serviceName: "stateful-demo" # Reference to Headless Service
+  serviceName: "stateful-demo" # 綁定 Headless Service
   replicas: 2
   selector:
     matchLabels:
@@ -20,19 +20,20 @@ spec:
         image: game-server/stateful-demo:latest
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 9002
+        - containerPort: 8090
           name: grpc
         env:
         - name: APP_ENV
           value: "local_k8s"
+        # 連線到 Central Service (Round-Robin)
         - name: CENTRAL_ADDR
-          value: "central:9003"
-        # 關鍵：使用 Downward API 注入 Pod Name 與 IP
-        # StatefulSet 的 Pod Name 固定為 stateful-demo-0, stateful-demo-1
+          value: "central:8090"
+        # 注入 Pod Name (e.g., stateful-demo-0)
         - name: POD_NAME
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        # 注入 Pod IP
         - name: POD_IP
           valueFrom:
             fieldRef:
@@ -42,8 +43,9 @@ spec:
         - name: REDIS_ADDR
           value: "redis:6379"
 ---
-# Headless Service (No ClusterIP)
-# 允許透過 DNS 解析個別 Pod (e.g., stateful-demo-0.stateful-demo)
+# Headless Service (ClusterIP: None)
+# 不提供 Load Balancing IP，而是直接回傳 Pod IP 列表。
+# 允許透過 DNS 解析個別 Pod，例如: stateful-demo-0.stateful-demo.default.svc.cluster.local
 apiVersion: v1
 kind: Service
 metadata:
@@ -52,9 +54,9 @@ metadata:
     app: stateful-demo
 spec:
   ports:
-  - port: 9002
-    targetPort: 9002
+  - port: 8090
+    targetPort: 8090
     name: grpc
-  clusterIP: None
+  clusterIP: None # 關鍵設定：不分配 Cluster IP
   selector:
     app: stateful-demo

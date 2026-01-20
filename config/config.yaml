@@ -2,6 +2,8 @@ app:
   name: "game-connector"
   env: "local"
   port: 8080
+  grpc_port: 8090
+
 
 redis:
   addr: "game-redis:6379"
@@ -30,4 +32,4 @@ wss:
   max_message_size: 512
 
 services:
-  central: "central:9003"
+  central: "central:8090"

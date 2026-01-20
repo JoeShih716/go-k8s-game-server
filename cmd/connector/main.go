@@ -31,7 +31,7 @@ func main() {
 	// 3. Central Client
 	centralAddr := app.Config.Services["central"]
 	if centralAddr == "" {
-		centralAddr = "central:9003"
+		centralAddr = "central:8090" // Default fallback
 	}
 	// 建立 gRPC 連線
 	centralConn, err := grpc.NewClient(centralAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))

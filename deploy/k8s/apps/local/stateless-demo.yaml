@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: Deployment # Stateless 服務使用一般 Deployment
 metadata:
   name: stateless-demo
   labels:
@@ -19,13 +19,14 @@ spec:
         image: game-server/demo:latest
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 9001
+        - containerPort: 8090
         env:
         - name: APP_ENV
           value: "local_k8s"
+        # 連線到 Central Service (Round-Robin)
         - name: CENTRAL_ADDR
-          value: "central:9003"
-        # 關鍵：注入 Pod IP，讓 Demo 能跟 Central 註冊自己的內網 IP
+          value: "central:8090"
+        # 關鍵：注入 Pod IP，讓 Demo 能跟 Central 註冊自己的內網 IP (Client-Side Discovery)
         - name: POD_IP
           valueFrom:
             fieldRef:
@@ -34,3 +35,6 @@ spec:
           value: "Asia/Taipei"
         - name: REDIS_ADDR
           value: "redis:6379"
+# 注意：Stateless Demo 不需要 K8s Service，
+# 因為它採用自行向 Central 註冊 IP 的方式 (Service Registry Pattern)，
+# Connector 會直接透過 Redis 查到的 Pod IP 進行連線。
