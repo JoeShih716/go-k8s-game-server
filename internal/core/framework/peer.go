@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/JoeShih716/go-k8s-game-server/api/proto/connectorRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
+	connector_sdk "github.com/JoeShih716/go-k8s-game-server/internal/sdk/connector" // SDK
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 )
 
@@ -41,7 +41,8 @@ func (p *Peer) Send(ctx context.Context, payload []byte) error {
 		return err
 	}
 
-	client := connectorRPC.NewConnectorRPCClient(conn)
+	// 使用 SDK 封裝
+	client := connector_sdk.NewClient(conn)
 
 	// 如果傳入的 ctx 是 Background，建議給個 Timeout
 	if _, ok := ctx.Deadline(); !ok {
@@ -50,11 +51,7 @@ func (p *Peer) Send(ctx context.Context, payload []byte) error {
 		defer cancel()
 	}
 
-	_, err = client.SendMessage(ctx, &connectorRPC.SendMessageReq{
-		SessionIds: []string{p.SessionID},
-		Payload:    payload,
-	})
-	return err
+	return client.Push(ctx, p.SessionID, payload)
 }
 
 // Kick 踢除玩家
@@ -66,7 +63,8 @@ func (p *Peer) Kick(ctx context.Context, reason string) error {
 	if err != nil {
 		return err
 	}
-	client := connectorRPC.NewConnectorRPCClient(conn)
+
+	client := connector_sdk.NewClient(conn)
 
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
@@ -74,11 +72,7 @@ func (p *Peer) Kick(ctx context.Context, reason string) error {
 		defer cancel()
 	}
 
-	_, err = client.Kick(ctx, &connectorRPC.KickReq{
-		SessionId: p.SessionID,
-		Reason:    reason,
-	})
-	return err
+	return client.ForceKick(ctx, p.SessionID, reason)
 }
 
 // PeerManager 管理 Stateful 服務的 Peers

@@ -1,5 +1,7 @@
 # Go K8s Game Server
 
+**中文** | [English](README_EN.md)
+
 [![Go Version](https://img.shields.io/badge/go-1.25-blue)](https://go.dev/)
 [![CI Status](https://github.com/JoeShih716/go-k8s-game-server/actions/workflows/ci.yaml/badge.svg)](https://github.com/JoeShih716/go-k8s-game-server/actions)
 [![codecov](https://codecov.io/gh/JoeShih716/go-k8s-game-server/graph/badge.svg)](https://codecov.io/gh/JoeShih716/go-k8s-game-server)
@@ -94,27 +96,38 @@ graph TD
 
 ```text
 go-k8s-game-server/
-├── cmd/                        # [部署入口] Wires dependencies
-│   ├── central/                # -> 中央服務
-│   ├── connector/              # -> 網關服務
-│   └── stateful/               # -> 有狀態遊戲入口
+├── cmd/                        # [應用入口] 負責依賴注入與啟動應用程式
+│   ├── central/                # -> 中央服務 (Service Registry, User Mgmt)
+│   ├── connector/              # -> 連接器服務 (WebSocket Gateway)
+│   └── stateful/               # -> 有狀態遊戲範例 (Stateful Game Loop)
 │
-├── internal/                   # [內部核心]
-│   ├── app/                    # -> Application Layer (Use Cases)
-│   │   ├── central/            #    -> Central 業務邏輯
-│   │   ├── connector/          #    -> Connector 業務邏輯
-│   │   └── game/               #    -> 各遊戲 Handler 實作
-│   ├── core/                   # -> Core Layer (Domain logic)
-│   │   ├── domain/             #    -> 實體 (User, wallet)
-│   │   ├── framework/          #    -> 遊戲框架 (Server, Peer)
-│   │   └── ports/              #    -> 介面定義 (Repository Interfaces)
-│   └── infrastructure/         # -> Infrastructure Layer
-│       ├── persistence/        #    -> 資料庫實作 (Redis)
-│       └── service_discovery/  #    -> 服務發現實作
+├── config/                     # [配置管理] 存放 YAML 設定檔與環境變數定義
+├── deploy/                     # [部署配置] Kubernetes Manifests, Dockerfiles, Helm Charts
+├── docs/                       # [專案文件] 架構設計文件 (ADR)、開發指南與 API 規格
 │
-└── pkg/                        # [通用工具庫]
-    ├── grpc/                   # -> gRPC Pools
-    └── redis/                  # -> Redis Client Helper
+├── internal/                   # [內部核心] 私有程式碼，外部不可引用
+│   ├── app/                    # -> 應用層 (Application Layer) - 實作具體 Use Cases
+│   │   ├── central/            #    -> Central 服務的業務邏輯
+│   │   ├── connector/          #    -> Connector 服務的業務邏輯
+│   │   └── game/               #    -> 各類遊戲玩法的具體實作 (Game Handlers)
+│   │
+│   ├── core/                   # -> 核心層 (Core Layer) - 包含 Domain 與 Ports
+│   │   ├── domain/             #    -> 領域實體 (Entities) - 純 Go Struct (User, Wallet)
+│   │   ├── ports/              #    -> 介面定義 (Ports) - 定義 Repository/Service 介面
+│   │   └── framework/          #    -> 遊戲框架核心 - 封裝連線管理與 Room 邏輯
+│   │
+│   ├── infrastructure/         # -> 基礎設施層 (Adapters) - 實作 Ports 介面
+│   │   ├── persistence/        #    -> 資料持久化 (Redis/MySQL Repository 實作)
+│   │   └── service_discovery/  #    -> 服務發現與註冊機制的實作
+│   │
+│   ├── sdk/                    # -> 內部微服務 SDK (Internal SDKs)
+│   │   └── central/            #    -> 封裝對 Central 服務的 gRPC 調用 (package central_sdk)
+│   │
+│   └── di/                     # -> 依賴注入 (Dependency Injection) Providers
+│
+└── pkg/                        # [公開套件] 可供外部專案引用的 Library
+    ├── grpc/                   # -> gRPC 連線池與工具
+    └── redis/                  # -> Redis Client 封裝與工具
 ```
 
 ## 快速開始 (Getting Started)

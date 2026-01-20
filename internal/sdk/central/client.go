@@ -1,4 +1,4 @@
-package central
+package central_sdk
 
 import (
 	"context"

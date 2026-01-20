@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -16,31 +17,32 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/handler"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
-	rpcsdk "github.com/JoeShih716/go-k8s-game-server/internal/pkg/client/central"
+	central_sdk "github.com/JoeShih716/go-k8s-game-server/internal/sdk/central"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )
 
 func main() {
-	// 1. 初始化 App (Logger, Config)
+	// 1. Bootstrap App (Logs, Config)
 	app := bootstrap.NewApp("connector")
 
 	// 2. 初始化核心組件
 	sessionMgr := session.NewManager()
 
-	// 3. Central Client
+	// 2. Connect to Central Service
 	centralAddr := app.Config.Services["central"]
 	if centralAddr == "" {
-		centralAddr = "central:8090" // Default fallback
+		centralAddr = "central:8090" // Default k8s service naming
 	}
 	// 建立 gRPC 連線
 	centralConn, err := grpc.NewClient(centralAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		slog.Error("Failed to connect to Central", "error", err)
+		slog.Error("Failed to connect to central", "error", err)
+		os.Exit(1)
 	} else {
 		slog.Info("Connected to Central", "addr", centralAddr)
 	}
-	centralClient := rpcsdk.NewClient(centralConn)
+	centralClient := central_sdk.NewClient(centralConn)
 
 	// 4. gRPC Pool
 	grpcPool := grpcpkg.NewPool()

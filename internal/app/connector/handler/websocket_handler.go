@@ -10,10 +10,10 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
-	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/protocol"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
+	game_sdk "github.com/JoeShih716/go-k8s-game-server/internal/sdk/game" // SDK
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )
 
@@ -104,15 +104,11 @@ func (h *WebsocketHandler) OnDisconnect(conn wss.Client) {
 				slog.Warn("Failed to get connection for OnPlayerQuit", "endpoint", ep, "error", err)
 				return
 			}
-			client := gameRPC.NewGameRPCClient(rpcConn)
-			_, err = client.OnPlayerQuit(ctx, &gameRPC.QuitReq{
-				Header: &proto.PacketHeader{
-					ReqId:     fmt.Sprintf("%d", time.Now().UnixNano()),
-					UserId:    uid,
-					SessionId: conn.ID(),
-					Timestamp: time.Now().UnixMilli(),
-				},
-			})
+
+			// 使用 SDK
+			client := game_sdk.NewClient(rpcConn)
+			_, err = client.Quit(ctx, uid, conn.ID())
+
 			if err != nil {
 				slog.Warn("OnPlayerQuit failed", "endpoint", ep, "error", err)
 			} else {
@@ -290,20 +286,13 @@ func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client,
 		h.sendError(conn, protocol.ActionEnterGame, "Game Server Unavailable")
 		return
 	}
-	client := gameRPC.NewGameRPCClient(rpcConn)
 
+	// 使用 SDK
+	client := game_sdk.NewClient(rpcConn)
 	joinCtx, joinCancel := context.WithTimeout(ctx, 3*time.Second)
 	defer joinCancel()
 
-	joinResp, err := client.OnPlayerJoin(joinCtx, &gameRPC.JoinReq{
-		Header: &proto.PacketHeader{
-			ReqId:     fmt.Sprintf("%d", time.Now().UnixNano()),
-			UserId:    userID,
-			SessionId: conn.ID(),
-			Timestamp: time.Now().UnixMilli(),
-		},
-		ConnectorHost: h.endpoint,
-	})
+	joinResp, err := client.Join(joinCtx, userID, conn.ID(), h.endpoint)
 
 	if err != nil {
 		slog.Error("OnPlayerJoin failed", "endpoint", endpoint, "error", err)
@@ -344,22 +333,14 @@ func (h *WebsocketHandler) forwardToBackend(ctx context.Context, conn wss.Client
 		return
 	}
 
-	client := gameRPC.NewGameRPCClient(rpcConn)
-	rpcReq := &gameRPC.MsgReq{
-		Header: &proto.PacketHeader{
-			ReqId:     fmt.Sprintf("%d", time.Now().UnixNano()),
-			UserId:    h.getUserID(conn),
-			SessionId: conn.ID(),
-			Timestamp: time.Now().UnixMilli(),
-		},
-		Payload: msg, // 直接透傳原始 JSON bytes
-	}
+	// 使用 SDK
+	client := game_sdk.NewClient(rpcConn)
 
 	// 呼叫後端
 	callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	rpcResp, err := client.OnMessage(callCtx, rpcReq)
+	rpcResp, err := client.SendMessage(callCtx, h.getUserID(conn), conn.ID(), msg)
 	if err != nil {
 		slog.Error("RPC OnMessage failed", "target", targetAddr, "error", err)
 		h.sendError(conn, "forward", "Game Server Error: "+err.Error())

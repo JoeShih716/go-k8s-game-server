@@ -48,7 +48,7 @@ vet: ## Run go vet
 	go vet ./...
 
 .PHONY: lint
-lint: ## Run golangci-lint
+lint: fmt vet ## Run fmt, vet, and golangci-lint
 	golangci-lint run ./...
 
 .PHONY: test

@@ -16,7 +16,7 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/framework"
 	"github.com/JoeShih716/go-k8s-game-server/internal/di"
-	rpcsdk "github.com/JoeShih716/go-k8s-game-server/internal/pkg/client/central"
+	central_sdk "github.com/JoeShih716/go-k8s-game-server/internal/sdk/central"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 )
 
@@ -60,7 +60,7 @@ func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
 	}
 
 	// 4. 初始化 Registrar
-	registrar := rpcsdk.NewRegistrar(conn, &rpcsdk.Config{
+	registrar := central_sdk.NewRegistrar(conn, &central_sdk.Config{
 		ServiceName: cfg.ServiceName,
 		ServiceType: cfg.ServiceType,
 		Endpoint:    fmt.Sprintf("%s:%d", host, port),
