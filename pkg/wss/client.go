@@ -4,6 +4,8 @@ import "net/http"
 
 // Client 定義了客戶端連線對外暴露的行為。
 // 業務邏輯層將依賴此介面，而非具體的 Connection 實作。
+//
+//go:generate mockgen -destination=../../test/mocks/pkg/wss/mock_client.go -package=mock_wss -source=client.go
 type Client interface {
 	// ID 返回客戶端的唯一標識符。
 	ID() string

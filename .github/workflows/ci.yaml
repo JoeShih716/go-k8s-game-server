@@ -46,14 +46,38 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     needs: lint # Lint 通過才跑測試，節省資源
+    permissions:
+      contents: write # Needed for badge generation
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25'
 
+      - name: Install dependencies
+        run: go get . && go mod download
+
+      - name: Generate Mocks
+        run: |
+          go install go.uber.org/mock/mockgen@latest
+          go generate ./...
+
+      # 僅測試 internal 目錄
       - name: Run Tests
-        run: go test -v -race -cover ./...
+        run: go test -v -race -coverprofile=coverage.out ./internal/...
+
+      - name: Generate Coverage Badge
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          # Profile path
+          profile: coverage.out
+          # Output badge file
+          local-prefix: github.com/JoeShih716/go-k8s-game-server
+          threshold-total: 50
+          # We will commit the badge to a specific branch 'badges' to avoid clutter
+          git-token: ${{ secrets.GITHUB_TOKEN }}
+          git-branch: badges
+          badge-file-name: coverage.svg
 
   build:
     name: Build

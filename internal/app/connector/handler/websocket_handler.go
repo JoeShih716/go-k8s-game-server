@@ -14,21 +14,19 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/protocol"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
-	rpcsdk "github.com/JoeShih716/go-k8s-game-server/internal/pkg/client/central"
-	pkggrpc "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )
 
 // WebsocketHandler 實作 wss.Subscriber 介面，處理 WebSocket 事件
 type WebsocketHandler struct {
 	sessionMgr    *session.Manager
-	grpcPool      *pkggrpc.Pool
-	centralClient *rpcsdk.Client
+	grpcPool      GRPCPool
+	centralClient CentralClient
 	endpoint      string
 }
 
 // NewWebsocketHandler 建立 WebSocket 事件處理器
-func NewWebsocketHandler(mgr *session.Manager, pool *pkggrpc.Pool, central *rpcsdk.Client, endpoint string) *WebsocketHandler {
+func NewWebsocketHandler(mgr *session.Manager, pool GRPCPool, central CentralClient, endpoint string) *WebsocketHandler {
 	return &WebsocketHandler{
 		sessionMgr:    mgr,
 		grpcPool:      pool,
@@ -36,6 +34,9 @@ func NewWebsocketHandler(mgr *session.Manager, pool *pkggrpc.Pool, central *rpcs
 		endpoint:      endpoint,
 	}
 }
+
+// 確保 WebsocketHandler 實作 wss.Subscriber 介面
+var _ wss.Subscriber = (*WebsocketHandler)(nil)
 
 // OnConnect 當新連線建立時觸發
 func (h *WebsocketHandler) OnConnect(conn wss.Client) {

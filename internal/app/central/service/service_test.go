@@ -1,96 +1,113 @@
-package service_test
+package service
 
 import (
 	"context"
 	"errors"
 	"log/slog"
+	"os"
 	"testing"
 
-	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/service"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/ports"
 	mock_ports "github.com/JoeShih716/go-k8s-game-server/test/mocks/core/ports"
+	"github.com/shopspring/decimal"
 )
 
-func TestCentralService_Login(t *testing.T) {
+func TestCentralService_Login_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockUserSvc := mock_ports.NewMockUserService(ctrl)
 	mockWalletSvc := mock_ports.NewMockWalletService(ctrl)
 	mockRegistry := mock_ports.NewMockRegistryService(ctrl)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	svc := service.NewCentralService(mockUserSvc, mockWalletSvc, mockRegistry, slog.Default())
+	svc := NewCentralService(mockUserSvc, mockWalletSvc, mockRegistry, logger)
 
-	t.Run("Login Success (Existing User)", func(t *testing.T) {
-		token := "user-token-123"
-		userID := "user-123"
-		mockUser := &domain.User{ID: userID, Name: "TestUser", Balance: decimal.Zero}
+	ctx := context.Background()
+	token := "valid-token"
+	userID := "user-123"
+	expectedUser := &domain.User{
+		ID:      userID,
+		Name:    "Test User",
+		Balance: decimal.NewFromInt(100),
+	}
 
-		// Expect UserService.GetUser -> Returns User
-		mockUserSvc.EXPECT().GetUser(gomock.Any(), token).Return(mockUser, nil)
+	// Mock UserSvc.GetUser -> Return user
+	mockUserSvc.EXPECT().GetUser(ctx, token).Return(expectedUser, nil)
 
-		// Expect WalletSvc.GetBalance (returns 100)
-		mockWalletSvc.EXPECT().GetBalance(gomock.Any(), userID).Return(decimal.NewFromInt(100), nil)
+	// Mock WalletSvc.GetBalance -> Return balance
+	mockWalletSvc.EXPECT().GetBalance(ctx, userID).Return(decimal.NewFromInt(1000), nil)
 
-		user, err := svc.Login(context.Background(), token)
+	user, err := svc.Login(ctx, token)
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, userID, user.ID)
+	// Balance should be updated from WalletService
+	assert.Equal(t, decimal.NewFromInt(1000), user.Balance)
+}
 
-		if err != nil {
-			t.Fatalf("Login failed: %v", err)
-		}
-		if user.ID != userID {
-			t.Errorf("Expected user ID %s, got %s", userID, user.ID)
-		}
-		if !user.Balance.Equal(decimal.NewFromInt(100)) {
-			t.Errorf("Expected balance 100, got %s", user.Balance)
-		}
+func TestCentralService_Login_InvalidToken(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserSvc := mock_ports.NewMockUserService(ctrl)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	svc := NewCentralService(mockUserSvc, nil, nil, logger)
+
+	_, err := svc.Login(context.Background(), "")
+	assert.ErrorIs(t, err, domain.ErrInvalidToken)
+}
+
+func TestCentralService_Login_AutoRegister_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserSvc := mock_ports.NewMockUserService(ctrl)
+	mockWalletSvc := mock_ports.NewMockWalletService(ctrl)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	svc := NewCentralService(mockUserSvc, mockWalletSvc, nil, logger)
+	ctx := context.Background()
+	token := "new-user-token"
+
+	// 1. GetUser returns UserNotFound
+	mockUserSvc.EXPECT().GetUser(ctx, token).Return(nil, ports.ErrUserNotFound)
+
+	// 2. CreateGuestUser should be called
+	// We use gomock.Any() for the user argument because the ID is generated internally
+	mockUserSvc.EXPECT().CreateGuestUser(ctx, token, gomock.Any()).DoAndReturn(func(ctx context.Context, token string, u *domain.User) error {
+		assert.NotEmpty(t, u.ID)
+		assert.Contains(t, u.Name, "guest-")
+		return nil
 	})
 
-	t.Run("Login Success (Guest Auto-Register)", func(t *testing.T) {
-		token := "guest-token-123"
+	// 3. GetBalance (called after registration) - assuming new user has 0 balance or whatever mocked
+	mockWalletSvc.EXPECT().GetBalance(ctx, gomock.Any()).Return(decimal.Zero, nil)
 
-		// Expect GetUser -> Not Found
-		mockUserSvc.EXPECT().GetUser(gomock.Any(), token).Return(nil, ports.ErrUserNotFound)
+	user, err := svc.Login(ctx, token)
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+}
 
-		// Expect CreateGuestUser
-		mockUserSvc.EXPECT().CreateGuestUser(gomock.Any(), token, gomock.Any()).DoAndReturn(func(ctx context.Context, t string, u *domain.User) error {
-			// Simulate creating guest user
-			u.ID = "new-guest-id"
-			u.Name = "Guest-new-guest-id"
-			return nil
-		})
+func TestCentralService_Login_RepoError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-		// Expect GetBalance (returns 0 for new guest)
-		mockWalletSvc.EXPECT().GetBalance(gomock.Any(), "new-guest-id").Return(decimal.Zero, nil)
+	mockUserSvc := mock_ports.NewMockUserService(ctrl)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-		user, err := svc.Login(context.Background(), token)
+	svc := NewCentralService(mockUserSvc, nil, nil, logger)
+	ctx := context.Background()
+	token := "error-token"
 
-		if err != nil {
-			t.Fatalf("Login failed: %v", err)
-		}
-		if user.ID != "new-guest-id" {
-			t.Errorf("Expected new guest ID, got %s", user.ID)
-		}
-	})
+	expectedErr := errors.New("db error")
+	mockUserSvc.EXPECT().GetUser(ctx, token).Return(nil, expectedErr)
 
-	t.Run("Login Failed (Invalid Token)", func(t *testing.T) {
-		_, err := svc.Login(context.Background(), "")
-		if err != domain.ErrInvalidToken {
-			t.Errorf("Expected ErrInvalidToken, got %v", err)
-		}
-	})
-
-	t.Run("Login Failed (Repo Error)", func(t *testing.T) {
-		token := "error-token"
-		// Expect GetUser -> DB Error
-		mockUserSvc.EXPECT().GetUser(gomock.Any(), token).Return(nil, errors.New("db connection error"))
-
-		_, err := svc.Login(context.Background(), token)
-		if err == nil {
-			t.Error("Expected error, got nil")
-		}
-	})
+	_, err := svc.Login(ctx, token)
+	assert.ErrorIs(t, err, expectedErr)
 }

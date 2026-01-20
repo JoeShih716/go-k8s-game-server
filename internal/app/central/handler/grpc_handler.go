@@ -74,7 +74,7 @@ func (h *GRPCHandler) Login(ctx context.Context, req *centralRPC.LoginRequest) (
 		Success:  true,
 		UserId:   user.ID,
 		Nickname: user.Name,
-		Balance:  fmt.Sprintf("%d", user.Balance),
+		Balance:  user.Balance.String(),
 	}, nil
 }
 
