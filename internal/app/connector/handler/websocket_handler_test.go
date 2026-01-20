@@ -101,7 +101,7 @@ func TestWebsocketHandler_Login(t *testing.T) {
 	})
 
 	// Login Expectations
-	mockWssClient.EXPECT().GetTag("user_id").Return(nil, false) // Check not logged in
+	mockWssClient.EXPECT().GetTag("user_id").Return(nil, false)     // Check not logged in
 	mockWssClient.EXPECT().GetTag("login_timer").Return(nil, false) // Stop timer
 
 	// Central Login verification
@@ -150,8 +150,8 @@ func TestWebsocketHandler_EnterGame(t *testing.T) {
 	})
 
 	// Expectations
-	mockWssClient.EXPECT().GetTag("current_game_id").Return(nil, false) // Not in game
-	mockWssClient.EXPECT().GetTag("user_id").Return("user-100", true) // Logged in
+	mockWssClient.EXPECT().GetTag("current_game_id").Return(nil, false)  // Not in game
+	mockWssClient.EXPECT().GetTag("user_id").Return("user-100", true)    // Logged in
 	mockWssClient.EXPECT().GetTag("enter_game_timer").Return(nil, false) // Stop timer
 
 	// Central GetRoute

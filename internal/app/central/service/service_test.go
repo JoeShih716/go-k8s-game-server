@@ -10,10 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/ports"
 	mock_ports "github.com/JoeShih716/go-k8s-game-server/test/mocks/core/ports"
-	"github.com/shopspring/decimal"
 )
 
 func TestCentralService_Login_Success(t *testing.T) {

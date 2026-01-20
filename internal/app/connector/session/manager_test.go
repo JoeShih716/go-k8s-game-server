@@ -101,7 +101,7 @@ func TestManager_Concurrent(t *testing.T) {
 	// Concurrent Add
 	wg.Add(numGoroutines)
 	for i := 0; i < numGoroutines; i++ {
-		go func(i int) {
+		go func(_ int) {
 			defer wg.Done()
 			mockClient := mock_wss.NewMockClient(ctrl)
 			// Use unique ID for each session
