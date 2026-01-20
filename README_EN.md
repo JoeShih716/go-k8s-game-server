@@ -115,7 +115,9 @@ go-k8s-game-server/
 │   │   └── ports/              #    -> Interfaces (Repository Interfaces)
 │   ├── infrastructure/         # -> Infrastructure Layer (Adapters)
 │   ├── sdk/                    # -> Internal Microservice SDKs
-│   │   └── central/            #    -> Encapsulates gRPC calls to Central Service (package central_sdk)
+│   │   ├── central/            #    -> Encapsulates gRPC calls to Central Service (package central_sdk)
+│   │   ├── connector/          #    -> Encapsulates gRPC calls to Connector Service (package connector_sdk)
+│   │   └── game/               #    -> Encapsulates gRPC calls to Game Server (package game_sdk)
 │   └── di/                     # -> Dependency Injection Providers
 │
 └── pkg/                        # [Public Libraries]

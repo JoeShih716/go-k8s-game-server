@@ -121,7 +121,9 @@ go-k8s-game-server/
 │   │   └── service_discovery/  #    -> 服務發現與註冊機制的實作
 │   │
 │   ├── sdk/                    # -> 內部微服務 SDK (Internal SDKs)
-│   │   └── central/            #    -> 封裝對 Central 服務的 gRPC 調用 (package central_sdk)
+│   │   ├── central/            #    -> 封裝對 Central 服務的 gRPC 調用 (package central_sdk)
+│   │   ├── connector/          #    -> 封裝對 Connector 服務的 gRPC 調用 (package connector_sdk)
+│   │   └── game/               #    -> 封裝對 Game Server 服務的 gRPC 調用 (package game_sdk)
 │   │
 │   └── di/                     # -> 依賴注入 (Dependency Injection) Providers
 │
