@@ -4,7 +4,7 @@ FIND_EMPTY := find . -type d -empty -not -path "./.git/*"
 # 目錄內檔案數量 > 1 代表除了 .gitkeep 還有別的東西
 FIND_REDUNDANT_KEEP := find . -name ".gitkeep" -not -path "./.git/*" -exec sh -c 'test $$(ls -A $$(dirname "{}") | wc -l) -gt 1' \; -print
 
-.PHONY: lint lint-fix install-lint keep-add keep-clean
+.PHONY: lint lint-fix install-lint keep-add keep-clean test install-tools gen-proto gen-mock
 
 # 安裝最新版 golangci-lint
 install-lint:
@@ -54,9 +54,11 @@ gen-proto:
 	@protoc --go_out=. --go_opt=paths=source_relative \
 	        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
 	        api/proto/*.proto api/proto/centralRPC/*.proto api/proto/gameRPC/*.proto api/proto/connectorRPC/*.proto
-	        api/proto/*.proto api/proto/centralRPC/*.proto api/proto/gameRPC/*.proto api/proto/connectorRPC/*.proto
 	@echo "Protobuf 生成完成！"
 
+# 執行單元測試 (排除自動生成代碼與 main entry)
+test:
+	go test -v -race -cover ./internal/...
 # 生成 Mock 檔案
 # 會掃描全專案的 go:generate 指令
 gen-mock:

@@ -4,9 +4,13 @@ app:
   port: 8080
 
 redis:
-  addr: "game-redis:6379"  # Docker Compose 中的 Service Name
+  addr: "game-redis:6379"
   password: ""
-  db: 0
+  db:
+    central:
+      name: 0
+    user:
+      name: 1
 
 mysql:
   host: "game-mysql"       # Docker Compose 中的 Service Name

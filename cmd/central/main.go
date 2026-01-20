@@ -15,72 +15,89 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/handler"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/service"
-	registry "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/service_discovery/redis"
-	user "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/user/redis"
-	wallet "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/wallet/mock"
+	"github.com/JoeShih716/go-k8s-game-server/internal/di"
+	infraRedis "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/redis"
 	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
-	"github.com/JoeShih716/go-k8s-game-server/pkg/redis"
 )
 
 func main() {
-	// 1. 初始化 App
+	// 1. 初始化 App (載入 Config, Logger)
 	app := bootstrap.NewApp("central")
+	ctx := context.Background()
 
-	// 2. 初始化 Redis
-	rds, err := redis.NewClient(redis.Config{
-		Addr:     app.Config.Redis.Addr,
-		Password: app.Config.Redis.Password,
-		DB:       app.Config.Redis.DB,
-	})
-	if err != nil {
-		slog.Error("Failed to connect to Redis", "error", err)
-		os.Exit(1)
+	slog.InfoContext(ctx, "Initializing dependencies concurrently...")
+
+	// 2. 並行初始化資源 (Redis, DB...)
+	// 參考 slot-go 的 Concurrent Init 模式
+	redisChan := make(chan *infraRedis.Provider, 1)
+	errChan := make(chan error, 2) // Buffer size = number of concurrent tasks
+
+	// Task A: Init Redis
+	go func() {
+		provider, err := di.InitializeRedisProvider(ctx, app.Config)
+		if err != nil {
+			errChan <- fmt.Errorf("redis init failed: %w", err)
+			return
+		}
+		redisChan <- provider
+	}()
+
+	// (Future) Task B: Init MySQL
+	// go func() { ... }()
+
+	// 3. 收集初始化結果
+	var redisProvider *infraRedis.Provider
+
+	// 這裡只有 1 個任務，若是多個可用 loop + select
+	// 為了擴充性，這裡寫成 loop 形式 (雖然只有 1 iteration)
+	const numTasks = 1
+	for i := 0; i < numTasks; i++ {
+		select {
+		case provider := <-redisChan:
+			redisProvider = provider
+			slog.Info("Redis initialized")
+		case err := <-errChan:
+			slog.Error("Dependency initialization failed", "error", err)
+			os.Exit(1)
+		}
 	}
 
-	// 3. 初始化 MySQL 暫時先不使用mysql
+	// 確保資源釋放
+	defer func() {
+		if redisProvider != nil {
+			redisProvider.Close()
+		}
+	}()
 
-	// db, err := mysql.NewClient(mysql.Config{
-	// 	User:     app.Config.MySQL.User,
-	// 	Password: app.Config.MySQL.Password,
-	// 	Host:     app.Config.MySQL.Host,
-	// 	Port:     app.Config.MySQL.Port,
-	// 	DBName:   app.Config.MySQL.DBName,
-	// 	LogLevel: "error", // Default log level
-	// })
-	// if err != nil {
-	// 	slog.Error("Failed to connect to MySQL", "error", err)
-	// 	os.Exit(1)
-	// }
-	// slog.Info("Database connected", "db", app.Config.MySQL.DBName)
+	// 4. 初始化 Services (Wiring)
+	// 使用 Generic DI Providers 取得各個單一職責的 Service
+	userService := di.ProvideUserService(app.Config, redisProvider)
+	walletService := di.ProvideWalletService(app.Config, redisProvider)
+	svcRegistry := di.ProvideRegistry(app.Config, redisProvider)
 
-	// 4. 初始化核心組件 (Clean Architecture Wiring)
-	// Infrastructure Layer
-	registry := registry.NewRedisRegistry(rds)
-	userService := user.NewUserService(rds)
-	mockWallet := wallet.NewMockWallet()
-
-	// App Layer
-	// CentralService 組裝了所需的 Ports (UserRepo, Wallet, Registry)
-	svc := service.NewCentralService(userService, mockWallet, registry, app.Logger)
+	// 5. 組裝 Central Service (Application Service)
+	centralSvc := service.NewCentralService(
+		userService,
+		walletService,
+		svcRegistry,
+		app.Logger,
+	)
 
 	// 任務: 定期清理 Zombie Services (每 30 秒)
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
-			if err := registry.CleanupDeadServices(context.Background()); err != nil {
+			if err := svcRegistry.CleanupDeadServices(context.Background()); err != nil {
 				slog.Warn("CleanupDeadServices failed", "error", err)
 			}
 		}
 	}()
 
 	// Handler Layer
-	// GRPCHandler 負責 Protocol (gRPC) 到 Service 的轉接
-	grpcHandler := handler.NewGRPCHandler(svc)
+	grpcHandler := handler.NewGRPCHandler(centralSvc)
 
 	// 5. 啟動服務
-	// Central 的預設 Port 是 9003
-	// 若 config/config.yaml 或環境變數 (PORT) 有設定，則使用該設定
 	port := 9003
 	if p := app.Config.App.Port; p != 0 {
 		port = p
@@ -98,15 +115,13 @@ func main() {
 				PermitWithoutStream: true,
 			}),
 		)
-		// Register the new Handler
+
 		centralRPC.RegisterCentralRPCServer(grpcServer, grpcHandler)
 		reflection.Register(grpcServer)
 
 		slog.Info("Central Service listening", "port", port)
 		return grpcServer.Serve(lis)
 	}, func() {
-		// Cleanup
-		rds.Close()
-		// db.Close()
+		// Cleanup handled by defer above
 	})
 }

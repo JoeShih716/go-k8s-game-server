@@ -7,10 +7,10 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/centralRPC"
 )
 
-// ServiceRegistry 定義服務註冊與發現的介面
+// RegistryService 定義服務註冊與發現的介面
 //
-//go:generate mockgen -destination=../../../test/mocks/core/ports/mock_service_registry.go -package=mock_ports github.com/JoeShih716/go-k8s-game-server/internal/core/ports ServiceRegistry
-type ServiceRegistry interface {
+//go:generate mockgen -destination=../../../test/mocks/core/ports/mock_registry_service.go -package=mock_ports github.com/JoeShih716/go-k8s-game-server/internal/core/ports RegistryService
+type RegistryService interface {
 	// Register 註冊一個服務實例
 	// 回傳 LeaseID (string)
 	Register(ctx context.Context, req *centralRPC.RegisterRequest) (string, error)

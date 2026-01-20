@@ -21,7 +21,7 @@ func TestCentralService_Login(t *testing.T) {
 
 	mockUserSvc := mock_ports.NewMockUserService(ctrl)
 	mockWalletSvc := mock_ports.NewMockWalletService(ctrl)
-	mockRegistry := mock_ports.NewMockServiceRegistry(ctrl)
+	mockRegistry := mock_ports.NewMockRegistryService(ctrl)
 
 	svc := service.NewCentralService(mockUserSvc, mockWalletSvc, mockRegistry, slog.Default())
 

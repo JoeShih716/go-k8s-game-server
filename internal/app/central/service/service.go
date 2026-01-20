@@ -16,13 +16,13 @@ import (
 type CentralService struct {
 	userSvc   ports.UserService
 	walletSvc ports.WalletService
-	registry  ports.ServiceRegistry
+	registry  ports.RegistryService
 	logger    *slog.Logger
 	counterID int
 }
 
 // NewCentralService 建立 Central Service
-func NewCentralService(userRepo ports.UserService, walletSvc ports.WalletService, registry ports.ServiceRegistry, logger *slog.Logger) *CentralService {
+func NewCentralService(userRepo ports.UserService, walletSvc ports.WalletService, registry ports.RegistryService, logger *slog.Logger) *CentralService {
 	return &CentralService{
 		userSvc:   userRepo,
 		walletSvc: walletSvc,
