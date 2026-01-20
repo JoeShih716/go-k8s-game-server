@@ -66,18 +66,12 @@ jobs:
       - name: Run Tests
         run: go test -v -race -coverprofile=coverage.out ./internal/...
 
-      - name: Generate Coverage Badge
-        uses: vladopajic/go-test-coverage@v2
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          # Profile path
-          profile: coverage.out
-          # Output badge file
-          local-prefix: github.com/JoeShih716/go-k8s-game-server
-          threshold-total: 50
-          # We will commit the badge to a specific branch 'badges' to avoid clutter
-          git-token: ${{ secrets.GITHUB_TOKEN }}
-          git-branch: badges
-          badge-file-name: coverage.svg
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out
+          fail_ci_if_error: false
 
   build:
     name: Build

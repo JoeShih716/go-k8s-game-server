@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.25-blue)](https://go.dev/)
 [![CI Status](https://github.com/JoeShih716/go-k8s-game-server/actions/workflows/ci.yaml/badge.svg)](https://github.com/JoeShih716/go-k8s-game-server/actions)
-[![Coverage](https://raw.githubusercontent.com/JoeShih716/go-k8s-game-server/badges/coverage.svg)](https://github.com/JoeShih716/go-k8s-game-server/actions/workflows/go-test.yml)
+[![codecov](https://codecov.io/gh/JoeShih716/go-k8s-game-server/graph/badge.svg)](https://codecov.io/gh/JoeShih716/go-k8s-game-server)
 [![Docker](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-ready-blue)](https://kubernetes.io/)
 
