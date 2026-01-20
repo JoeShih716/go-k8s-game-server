@@ -123,15 +123,23 @@ go-k8s-game-server/
 - Docker & Docker Compose
 - Go 1.25+
 
-### 本地開發 (Docker Compose)
-這是最快的啟動方式，支援熱重載。
+### 本地開發 (Local Development)
 
-1.  **啟動服務**:
-    ```bash
-    docker-compose up --build
-    ```
-    此指令會啟動 Redis, Central, Connector 以及 Demo Services。
-    *(MySQL 為選用，目前主要使用 Redis 進行資料存取)*
+#### 使用 Makefile (推薦)
+本專案提供豐富的 `Makefile` 指令來簡化開發流程：
+
+- **`make docker-up`**: 啟動本地開發環境 (支援 Air Hot-reload)。
+- **`make docker-down`**: 停止並移除容器。
+- **`make docker-logs`**: 查看容器日誌。
+- **`make help`**: 查看所有可用指令。
+- **`make test`**: 執行單元測試。
+
+#### 手動啟動
+```bash
+docker-compose up --build
+```
+此指令會啟動 Redis, Central, Connector 以及 Demo Services。
+*(MySQL 為選用，目前主要使用 Redis 進行資料存取)*
 
 2.  **測試連線**:
     開啟瀏覽器訪問 `http://localhost:8080` (內建 WebSocket 測試工具)。
