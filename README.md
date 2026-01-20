@@ -27,6 +27,43 @@
 
 ## 架構概覽 (Architecture)
 
+```mermaid
+graph TD
+    Client([Client / Browser])
+
+    subgraph K8s["Kubernetes Cluster"]
+        direction TB
+
+        Connector["Connector (Gateway) <br/> [WS/WSS]"]
+        Central["Central Service <br/> [gRPC]"]
+
+        subgraph GameServices["Game Services"]
+            Stateless["Stateless Demo <br/> (Slots)"]
+            Stateful["Stateful Demo <br/> (Battle)"]
+        end
+
+        subgraph Infra["Infrastructure"]
+            Redis[("Redis <br/> (Registry/User)")]
+        end
+    end
+
+    %% Client Connections
+    Client <-->|WebSocket| Connector
+
+    %% Internal Communication
+    Connector <-->|gRPC| Central
+    Connector <-->|gRPC| Stateless
+    Connector <-->|gRPC| Stateful
+
+    %% Central Interactions
+    Central -->|Registry/User/Queue| Redis
+
+    %% Service Discovery
+    Stateless -.->|Register| Central
+    Stateful -.->|Register| Central
+    Connector -.->|GetRoute| Central
+```
+
 ### 設計原則 (Design Principles)
 本專案嚴格遵循 **Clean Architecture (洋蔥架構)**，將業務邏輯與基礎設施分離：
 - **Core Layer (Framework & Domain)**: 定義核心邏輯、介面 (Ports) 與實體 (Entities)。不依賴任何外部套件。
@@ -64,6 +101,7 @@ go-k8s-game-server/
 ├── internal/                   # [內部核心]
 │   ├── app/                    # -> Application Layer (Use Cases)
 │   │   ├── central/            #    -> Central 業務邏輯
+│   │   ├── connector/          #    -> Connector 業務邏輯
 │   │   └── game/               #    -> 各遊戲 Handler 實作
 │   ├── core/                   # -> Core Layer (Domain logic)
 │   │   ├── domain/             #    -> 實體 (User, wallet)
