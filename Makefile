@@ -4,11 +4,12 @@
 PROJECT_NAME := game-server
 
 # Docker Image Names
-IMAGE_PREFIX := joe-shih/go-k8s
-CENTRAL_IMAGE := $(IMAGE_PREFIX)-central
-CONNECTOR_IMAGE := $(IMAGE_PREFIX)-connector
-STATELESS_IMAGE := $(IMAGE_PREFIX)-stateless
-STATEFUL_IMAGE := $(IMAGE_PREFIX)-stateful
+# Docker Image Names
+IMAGE_PREFIX := go-k8s-game-server
+CENTRAL_IMAGE := $(IMAGE_PREFIX)/central
+CONNECTOR_IMAGE := $(IMAGE_PREFIX)/connector
+STATELESS_IMAGE := $(IMAGE_PREFIX)/stateless
+STATEFUL_IMAGE := $(IMAGE_PREFIX)/stateful
 TAG ?= latest
 
 # Directories

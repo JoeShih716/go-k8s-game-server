@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: demo
-        image: game-server/demo:latest
+        image: go-k8s-game-server/stateless:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8090

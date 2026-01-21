@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: connector
-        image: game-server/connector:latest
+        image: go-k8s-game-server/connector:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080 # WebSocket Port (對外)

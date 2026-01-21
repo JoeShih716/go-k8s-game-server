@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: central
-        image: game-server/central:latest
+        image: go-k8s-game-server/central:latest
         imagePullPolicy: IfNotPresent # 本地測試使用，優先使用本地 Image
         ports:
         - containerPort: 8090

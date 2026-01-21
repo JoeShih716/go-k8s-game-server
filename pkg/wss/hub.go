@@ -70,11 +70,6 @@ func (h *hub) run() {
 					subscriber.OnDisconnect(client)
 				}
 			}
-		case msg := <-h.inbound:
-			h.logger.Debug("message received from client", "clientID", msg.client.ID())
-			for _, subscriber := range h.subscribers {
-				subscriber.OnMessage(msg.client, msg.message)
-			}
 		case <-h.ctx.Done():
 			// Context 被取消，開始關閉程序
 			h.logger.Info("hub shutting down")

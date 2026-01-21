@@ -96,7 +96,7 @@ func (c *connection) GetTag(key string) (value any, exists bool) {
 	return
 }
 
-// readPump 將來自 WebSocket 連線的訊息泵送到 hub。
+// readPump 從 WebSocket 連線讀取訊息，並直接分派給註冊的 Subscriber。
 // 它會持續讀取客戶端訊息，直到連線關閉或發生錯誤。
 //
 // @param cfg - WebSocket 伺服器的設定參數。
@@ -122,7 +122,12 @@ func (c *connection) readPump(cfg *Config) {
 			}
 			break
 		}
-		c.hub.inbound <- &clientMessage{client: c, message: message}
+		// [Optimization] 直接在 Connection Goroutine 處理，繞過 Hub 單執行緒瓶頸
+		// 因為他們在同一個 package (wss)，所以可以直接存取 c.hub.subscribers
+		// 注意: c.hub.subscribers 在 Server 啟動後通常不變 (Static Registration)，所以讀取是安全的。
+		for _, sub := range c.hub.subscribers {
+			sub.OnMessage(c, message)
+		}
 	}
 }
 
