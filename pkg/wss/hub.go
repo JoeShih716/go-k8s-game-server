@@ -10,7 +10,6 @@ type hub struct {
 	clients     map[*connection]bool
 	register    chan *connection
 	unregister  chan *connection
-	inbound     chan *clientMessage
 	subscribers []Subscriber
 	ctx         context.Context
 	logger      *slog.Logger
@@ -25,7 +24,6 @@ func newHub(ctx context.Context, logger *slog.Logger) *hub {
 	return &hub{
 		register:    make(chan *connection),
 		unregister:  make(chan *connection),
-		inbound:     make(chan *clientMessage),
 		clients:     make(map[*connection]bool),
 		subscribers: make([]Subscriber, 0),
 		ctx:         ctx,
