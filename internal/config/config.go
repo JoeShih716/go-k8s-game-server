@@ -8,6 +8,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	DefaultGrpcPort    = 8090
+	DefaultCentralAddr = "central:8090"
+)
+
 // RedisGlobalConfig matches the hierarchy: redis -> (addr, db -> (central -> name))
 type RedisGlobalConfig struct {
 	Addr     string                   `mapstructure:"addr"`
@@ -70,6 +75,12 @@ type WSSConfig struct {
 // 只要環境變數名稱符合上述規則，Viper 就會自動讀取並覆蓋 YAML 中的值。
 func Load(configPath ...string) (*Config, error) {
 	v := viper.New()
+
+	// Set Defaults
+	v.SetDefault("app.grpc_port", DefaultGrpcPort)
+	v.SetDefault("services", map[string]string{
+		"central": DefaultCentralAddr,
+	})
 
 	// 1. 設定檔路徑
 	dir := "./config"

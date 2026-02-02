@@ -98,10 +98,7 @@ func main() {
 	grpcHandler := handler.NewGRPCHandler(centralSvc)
 
 	// 5. 啟動服務
-	port := 8090 // Default internal gRPC port
-	if p := app.Config.App.GrpcPort; p != 0 {
-		port = p
-	}
+	port := app.Config.App.GrpcPort
 
 	app.Run(func() error {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))

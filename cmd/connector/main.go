@@ -31,9 +31,6 @@ func main() {
 
 	// 2. Connect to Central Service
 	centralAddr := app.Config.Services["central"]
-	if centralAddr == "" {
-		centralAddr = "central:8090" // Default k8s service naming
-	}
 	// 建立 gRPC 連線
 	centralConn, err := grpc.NewClient(centralAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -53,11 +50,8 @@ func main() {
 		podIP = "127.0.0.1"
 		slog.Warn("POD_IP not set, using default", "ip", podIP)
 	}
-	// 決定 gRPC Port (預設 9080)
-	grpcPort := 9080
-	if app.Config.App.GrpcPort != 0 {
-		grpcPort = app.Config.App.GrpcPort
-	}
+	// gRPC Port
+	grpcPort := app.Config.App.GrpcPort
 	myRPCPoint := fmt.Sprintf("%s:%d", podIP, grpcPort)
 	slog.Info("Connector.. ", "myEndpoint", myRPCPoint)
 
@@ -83,6 +77,7 @@ func main() {
 	http.Handle(path, wsServer)
 
 	// 8. 啟動服務 (Run)
+	var grpcServer *grpc.Server // Declare outside to access in cleanup
 	app.Run(func() error {
 		// 8.1 啟動 gRPC Server (Background)
 		go func() {
@@ -93,7 +88,7 @@ func main() {
 				panic(fmt.Sprintf("Failed to listen gRPC on port %d: %v", grpcPort, err))
 			}
 
-			grpcServer := grpc.NewServer(
+			grpcServer = grpc.NewServer(
 				grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
 					MinTime:             5 * time.Second,
 					PermitWithoutStream: true,
@@ -112,7 +107,24 @@ func main() {
 		slog.Info("Listening on", "addr", addr, "path", path)
 		return http.ListenAndServe(addr, nil)
 	}, func() {
-		// Cleanup
+		// Cleanup Logic (Graceful Shutdown)
+		slog.Info("Starting Cleanup...")
+
+		// 1. WebSocket Server Shutdown (Kick all players)
+		wsServer.Shutdown()
+
+		// 2. gRPC Server Graceful Stop (Finish current requests)
+		if grpcServer != nil {
+			slog.Info("Stopping gRPC Server...")
+			grpcServer.GracefulStop()
+			slog.Info("gRPC Server stopped")
+		}
+
+		// 3. Wait for Async Handlers (e.g. OnPlayerQuit)
+		slog.Info("Waiting for async handlers...")
+		wsHandler.Close()
+
+		// Cleanup Resources
 		grpcPool.Close()
 	})
 }

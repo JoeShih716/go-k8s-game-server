@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -23,6 +24,7 @@ type WebsocketHandler struct {
 	grpcPool      GRPCPool
 	centralClient CentralClient
 	endpoint      string
+	wg            sync.WaitGroup // 用於追蹤非同步任務 (如 OnDisconnect 的 RPC)
 }
 
 // NewWebsocketHandler 建立 WebSocket 事件處理器
@@ -33,6 +35,11 @@ func NewWebsocketHandler(mgr *session.Manager, pool GRPCPool, central CentralCli
 		centralClient: central,
 		endpoint:      endpoint,
 	}
+}
+
+// Close 等待所有非同步任務完成 (Graceful Shutdown)
+func (h *WebsocketHandler) Close() {
+	h.wg.Wait()
 }
 
 // 確保 WebsocketHandler 實作 wss.Subscriber 介面
@@ -95,7 +102,9 @@ func (h *WebsocketHandler) OnDisconnect(conn wss.Client) {
 	// 3. 若有目標 Endpoint，發送信號
 	if targetEndpoint != "" {
 		// 非同步通知，避免阻塞斷線流程
+		h.wg.Add(1)
 		go func(ep string, uid string) {
+			defer h.wg.Done()
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
 

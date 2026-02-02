@@ -10,9 +10,10 @@ import (
 
 // Server 是 websocket package 對外的主要門面 (Facade)，並實現了 http.Handler 介面。
 type Server struct {
-	hub    *hub
-	cfg    *Config
-	logger *slog.Logger
+	hub        *hub
+	cfg        *Config
+	logger     *slog.Logger
+	shutdownFn context.CancelFunc // 用於觸發優雅停機
 }
 
 // 確保 Server 實現了 http.Handler 介面
@@ -30,12 +31,16 @@ func NewServer(ctx context.Context, cfg *Config, logger *slog.Logger) *Server {
 		cfg.PingPeriod = (cfg.PongWait * 9) / 10
 	}
 
-	h := newHub(ctx, logger.With("component", "hub"))
+	// 建立可取消的 Context，用於控制 Hub 生命週期
+	idsCtx, cancel := context.WithCancel(ctx)
+
+	h := newHub(idsCtx, logger.With("component", "hub"))
 	go h.run()
 	return &Server{
-		hub:    h,
-		cfg:    cfg,
-		logger: logger.With("component", "wss_server"),
+		hub:        h,
+		cfg:        cfg,
+		logger:     logger.With("component", "wss_server"),
+		shutdownFn: cancel,
 	}
 }
 
@@ -44,6 +49,18 @@ func NewServer(ctx context.Context, cfg *Config, logger *slog.Logger) *Server {
 // @param subscriber - 實現了 Subscriber 介面的事件處理器。
 func (s *Server) Register(subscriber Subscriber) {
 	s.hub.registerSubscriber(subscriber)
+}
+
+// Shutdown 優雅關閉 WebSocket 伺服器。
+// 它會通知 Hub 停止接收新連線，並斷開所有現有連線 (發送 Close Frame)。
+// 此方法會阻塞，直到 Hub 完成所有清理工作。
+func (s *Server) Shutdown() {
+	if s.shutdownFn != nil {
+		s.logger.Info("Shutting down WebSocket Server...")
+		s.shutdownFn()
+		<-s.hub.done // 等待 Hub run() 結束
+		s.logger.Info("WebSocket Server shutdown complete")
+	}
 }
 
 // ServeHTTP 實現 http.Handler 介面，處理 WebSocket 的升級請求。

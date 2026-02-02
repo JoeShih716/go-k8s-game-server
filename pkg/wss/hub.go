@@ -12,6 +12,7 @@ type hub struct {
 	unregister  chan *connection
 	subscribers []Subscriber
 	ctx         context.Context
+	done        chan struct{} // 通知 Server Hub 已完全停止
 	logger      *slog.Logger
 }
 
@@ -27,6 +28,7 @@ func newHub(ctx context.Context, logger *slog.Logger) *hub {
 		clients:     make(map[*connection]bool),
 		subscribers: make([]Subscriber, 0),
 		ctx:         ctx,
+		done:        make(chan struct{}),
 		logger:      logger,
 	}
 }
@@ -72,6 +74,12 @@ func (h *hub) run() {
 			// Context 被取消，開始關閉程序
 			h.logger.Info("hub shutting down")
 			for client := range h.clients {
+				// 1. 下線通知
+				for _, subscriber := range h.subscribers {
+					subscriber.OnDisconnect(client)
+				}
+
+				// 2. 踢除連線
 				err := client.Kick("Server is shutting down.")
 				if err != nil {
 					h.logger.Error("kick client failed", "error", err, "clientID", client.ID())
@@ -79,7 +87,8 @@ func (h *hub) run() {
 				delete(h.clients, client)
 				close(client.send)
 			}
-			return // 結束 run 迴圈
+			close(h.done) // 通知 Server: Hub 關機完畢
+			return        // 結束 run 迴圈
 		}
 	}
 }

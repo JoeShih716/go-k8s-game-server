@@ -16,3 +16,6 @@
 
 # Go
 vendor/
+
+# Docs (Private Notes)
+docs/*.md

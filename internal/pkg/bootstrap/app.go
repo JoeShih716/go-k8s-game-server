@@ -32,8 +32,19 @@ func NewApp(appName string) *App {
 		os.Exit(1)
 	}
 
-	// 3. (Optional) 如果 Config 有設定 LogLevel 或 Format，這裡可以重新配置 Logger
-	// 目前先保持預設
+	// 3. 根據環境重新配置 Logger
+	// Production -> JSON (Structured Logging)
+	// Others     -> Text (Readable)
+	var handler slog.Handler
+
+	switch cfg.App.Env {
+	case "production", "prod":
+		handler = slog.NewJSONHandler(os.Stdout, nil)
+	default:
+		handler = slog.NewTextHandler(os.Stdout, nil)
+	}
+	logger = slog.New(handler)
+	slog.SetDefault(logger) // 更新 Default Logger
 
 	return &App{
 		Name:   appName,

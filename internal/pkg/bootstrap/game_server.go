@@ -33,15 +33,10 @@ type GameServerConfig struct {
 func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
 	// 1. 初始化 App
 	app := NewApp(cfg.ServiceName)
-
-	port := 8090 // Default internal gRPC port
-	if p := app.Config.App.GrpcPort; p != 0 {
-		port = p
-	} else if cfg.DefaultGrpcPort != 0 {
-		// Fallback to legacy default port if GrpcPort is not set (useful for local non-docker run)
+	port := app.Config.App.GrpcPort
+	if port == 0 && cfg.DefaultGrpcPort != 0 {
 		port = cfg.DefaultGrpcPort
 	}
-
 	// 2. 決定 Host
 	host := cfg.ServiceName
 	if app.Config.App.PodIP != "" {
@@ -50,10 +45,6 @@ func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
 
 	// 3. 連線 Central
 	centralAddr := app.Config.Services["central"]
-	if centralAddr == "" {
-		centralAddr = "central:8090"
-	}
-
 	conn, err := grpc.NewClient(centralAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		slog.Error("Failed to connect to central", "error", err)
