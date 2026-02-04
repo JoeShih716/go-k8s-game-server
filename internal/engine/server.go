@@ -1,4 +1,4 @@
-package framework
+package engine
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 
 // GameHandler 使用者需實作的業務邏輯介面
 //
-//go:generate mockgen -destination=../../../test/mocks/framework/mock_game_handler.go -package=mock_framework github.com/JoeShih716/go-k8s-game-server/internal/core/framework GameHandler
+//go:generate mockgen -destination=../../test/mocks/engine/mock_game_handler.go -package=mock_engine -source=server.go -self_package github.com/JoeShih716/go-k8s-game-server/test/mocks/engine GameHandler
 type GameHandler interface {
 	OnJoin(ctx context.Context, peer *Peer) error
 	OnQuit(ctx context.Context, peer *Peer) error
@@ -24,9 +24,9 @@ type GameHandler interface {
 // BaseHandler 提供 GameHandler 的預設空實作 (Optional)
 type BaseHandler struct{}
 
-func (h *BaseHandler) OnJoin(ctx context.Context, peer *Peer) error { return nil }
-func (h *BaseHandler) OnQuit(ctx context.Context, peer *Peer) error { return nil }
-func (h *BaseHandler) OnMessage(ctx context.Context, peer *Peer, payload []byte) ([]byte, error) {
+func (_ *BaseHandler) OnJoin(_ context.Context, _ *Peer) error { return nil }
+func (_ *BaseHandler) OnQuit(_ context.Context, _ *Peer) error { return nil }
+func (_ *BaseHandler) OnMessage(_ context.Context, _ *Peer, _ []byte) ([]byte, error) {
 	return nil, nil
 }
 

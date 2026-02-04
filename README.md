@@ -113,17 +113,25 @@ go-k8s-game-server/
 │   │
 │   ├── core/                   # -> 核心層 (Core Layer) - 包含 Domain 與 Ports
 │   │   ├── domain/             #    -> 領域實體 (Entities) - 純 Go Struct (User, Wallet)
-│   │   ├── ports/              #    -> 介面定義 (Ports) - 定義 Repository/Service 介面
-│   │   └── framework/          #    -> 遊戲框架核心 - 封裝連線管理與 Room 邏輯
+│   │   └── ports/              #    -> 介面定義 (Ports) - 定義 Repository/Service 介面
+│   │
+│   ├── engine/                 # -> [Engine] 遊戲引擎核心
+│   │   ├── runner.go           #    -> 遊戲伺服器啟動器 (RunGameServer)
+│   │   ├── server.go           #    -> gRPC Server 封裝
+│   │   └── peer.go             #    -> 玩家連線封裝 (Peer)
 │   │
 │   ├── infrastructure/         # -> 基礎設施層 (Adapters) - 實作 Ports 介面
 │   │   ├── persistence/        #    -> 資料持久化 (Redis/MySQL Repository 實作)
 │   │   └── service_discovery/  #    -> 服務發現與註冊機制的實作
 │   │
-│   ├── sdk/                    # -> 內部微服務 SDK (Internal SDKs)
-│   │   ├── central/            #    -> 封裝對 Central 服務的 gRPC 調用 (package central_sdk)
-│   │   ├── connector/          #    -> 封裝對 Connector 服務的 gRPC 調用 (package connector_sdk)
-│   │   └── game/               #    -> 封裝對 Game Server 服務的 gRPC 調用 (package game_sdk)
+│   ├── grpc_client/            # -> [Client] 內部微服務 gRPC 客戶端
+│   │   ├── central/            #    -> 對 Central 服務的 gRPC 調用 (package central_client)
+│   │   ├── connector/          #    -> 對 Connector 服務的 gRPC 調用 (package connector_client)
+│   │   └── game/               #    -> 對 Game Server 服務的 gRPC 調用 (package game_client)
+│   │
+│   ├── kit/                    # -> [Kit] 通用工具包
+│   │   ├── bootstrap/          #    -> 應用程式啟動引導 (App, Flags)
+│   │   └── config/             #    -> 配置讀取與管理 (Viper)
 │   │
 │   └── di/                     # -> 依賴注入 (Dependency Injection) Providers
 │
@@ -166,11 +174,11 @@ docker-compose up --build
 
 #### 新增一個遊戲服務
 1.  在 `cmd/` 下建立新目錄。
-2.  實作 `internal/core/framework.GameHandler` 介面：
+2.  實作 `internal/engine.GameHandler` 介面：
     - `OnJoin(ctx, peer)`: 可透過 `peer.User` 存取玩家資訊。
     - `OnQuit(ctx, peer)`
     - `OnMessage(ctx, peer, payload)`
-3.  使用 `bootstrap.RunGameServer` 啟動，Framework 會自動處理依賴注入。
+3.  使用 `engine.RunGameServer` 啟動，Engine 會自動處理依賴注入。
 
 ### CI/CD
 本專案包含 GitHub Actions Workflow (`.github/workflows/ci.yaml`)，在 Push 或 PR 時自動執行：

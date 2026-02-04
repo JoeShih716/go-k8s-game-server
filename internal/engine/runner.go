@@ -1,4 +1,4 @@
-package bootstrap
+package engine
 
 import (
 	"context"
@@ -14,9 +14,9 @@ import (
 
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
-	"github.com/JoeShih716/go-k8s-game-server/internal/core/framework"
 	"github.com/JoeShih716/go-k8s-game-server/internal/di"
-	central_sdk "github.com/JoeShih716/go-k8s-game-server/internal/sdk/central"
+	central_client "github.com/JoeShih716/go-k8s-game-server/internal/grpc_client/central"
+	"github.com/JoeShih716/go-k8s-game-server/internal/kit/bootstrap"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 )
 
@@ -29,10 +29,10 @@ type GameServerConfig struct {
 }
 
 // RunGameServer 啟動通用的 Game Server 流程
-// 接受 framework.GameHandler (業務邏輯) 而非底層 gRPC 註冊回呼
-func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
+// 接受 GameHandler (業務邏輯) 而非底層 gRPC 註冊回呼
+func RunGameServer(cfg GameServerConfig, handler GameHandler) {
 	// 1. 初始化 App
-	app := NewApp(cfg.ServiceName)
+	app := bootstrap.NewApp(cfg.ServiceName)
 	port := app.Config.App.GrpcPort
 	if port == 0 && cfg.DefaultGrpcPort != 0 {
 		port = cfg.DefaultGrpcPort
@@ -51,7 +51,7 @@ func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
 	}
 
 	// 4. 初始化 Registrar
-	registrar := central_sdk.NewRegistrar(conn, &central_sdk.Config{
+	registrar := central_client.NewRegistrar(conn, &central_client.Config{
 		ServiceName: cfg.ServiceName,
 		ServiceType: cfg.ServiceType,
 		Endpoint:    fmt.Sprintf("%s:%d", host, port),
@@ -81,7 +81,7 @@ func RunGameServer(cfg GameServerConfig, handler framework.GameHandler) {
 	// 6. Framework Server Setup
 	// 判斷是否為 Stateful (根據 ServiceType)
 	isStateful := cfg.ServiceType == proto.ServiceType_STATEFUL
-	gameServer := framework.NewServer(handler, grpcPool, isStateful, cfg.ServiceName, userSvc, walletSvc)
+	gameServer := NewServer(handler, grpcPool, isStateful, cfg.ServiceName, userSvc, walletSvc)
 
 	// 7. gRPC Server Setup
 	grpcServer := grpc.NewServer(

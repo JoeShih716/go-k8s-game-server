@@ -17,7 +17,7 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/central/service"
 	"github.com/JoeShih716/go-k8s-game-server/internal/di"
 	infraRedis "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/redis"
-	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
+	"github.com/JoeShih716/go-k8s-game-server/internal/kit/bootstrap"
 )
 
 func main() {

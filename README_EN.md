@@ -109,15 +109,28 @@ go-k8s-game-server/
 ├── internal/                   # [Private Core]
 │   ├── app/                    # -> Application Layer (Use Cases)
 │   │   ├── central/            #    -> Central business logic
-│   │   └── connector/          #    -> Connector business logic
+│   │   ├── connector/          #    -> Connector business logic
+│   │
 │   ├── core/                   # -> Core Layer (Domain logic)
 │   │   ├── domain/             #    -> Entities (User, Wallet)
 │   │   └── ports/              #    -> Interfaces (Repository Interfaces)
+│   │
+│   ├── engine/                 # -> [Engine] Game Server Engine
+│   │   ├── runner.go           #    -> Game Server Runner (RunGameServer)
+│   │   ├── server.go           #    -> gRPC Server wrapper
+│   │   └── peer.go             #    -> Player Connection wrapper (Peer)
+│   │
 │   ├── infrastructure/         # -> Infrastructure Layer (Adapters)
-│   ├── sdk/                    # -> Internal Microservice SDKs
-│   │   ├── central/            #    -> Encapsulates gRPC calls to Central Service (package central_sdk)
-│   │   ├── connector/          #    -> Encapsulates gRPC calls to Connector Service (package connector_sdk)
-│   │   └── game/               #    -> Encapsulates gRPC calls to Game Server (package game_sdk)
+│   │
+│   ├── grpc_client/            # -> [Client] Internal Microservice gRPC Clients
+│   │   ├── central/            #    -> gRPC Client for Central Service (package central_client)
+│   │   ├── connector/          #    -> gRPC Client for Connector Service (package connector_client)
+│   │   └── game/               #    -> gRPC Client for Game Service (package game_client)
+│   │
+│   ├── kit/                    # -> [Kit] General Utilities
+│   │   ├── bootstrap/          #    -> Application Bootstrap (App, Flags)
+│   │   └── config/             #    -> Configuration Management (Viper)
+│   │
 │   └── di/                     # -> Dependency Injection Providers
 │
 └── pkg/                        # [Public Libraries]
@@ -159,11 +172,11 @@ This command starts Redis, Central, Connector, and Demo Services.
 
 #### Adding a New Game Service
 1.  Create a new directory under `cmd/`.
-2.  Implement `internal/core/framework.GameHandler` interface:
+2.  Implement `internal/engine.GameHandler` interface:
     - `OnJoin(ctx, peer)`: Access player info via `peer.User`.
     - `OnQuit(ctx, peer)`
     - `OnMessage(ctx, peer, payload)`
-3.  Start using `bootstrap.RunGameServer`; the Framework handles dependency injection automatically.
+3.  Start using `engine.RunGameServer`; the Engine handles dependency injection automatically.
 
 ### CI/CD
 This project includes GitHub Actions Workflow (`.github/workflows/ci.yaml`), triggered on Push or PR:

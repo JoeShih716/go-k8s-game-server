@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/JoeShih716/go-k8s-game-server/internal/config"
+	"github.com/JoeShih716/go-k8s-game-server/internal/kit/config"
 	pkgRedis "github.com/JoeShih716/go-k8s-game-server/pkg/redis"
 )
 

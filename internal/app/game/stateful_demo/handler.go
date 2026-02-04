@@ -6,12 +6,12 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/JoeShih716/go-k8s-game-server/internal/core/framework"
+	"github.com/JoeShih716/go-k8s-game-server/internal/engine"
 )
 
-// Handler 實作 framework.GameHandler 介面
+// Handler 實作 engine.GameHandler 介面
 type Handler struct {
-	framework.BaseHandler
+	engine.BaseHandler
 	host string
 }
 
@@ -23,7 +23,7 @@ func NewHandler(host string) *Handler {
 }
 
 // OnMessage 處理這來自 Connector 的請求
-func (h *Handler) OnMessage(ctx context.Context, peer *framework.Peer, payload []byte) ([]byte, error) {
+func (h *Handler) OnMessage(_ context.Context, peer *engine.Peer, payload []byte) ([]byte, error) {
 	// 取得 Payload (假設內容是字串)
 	payloadStr := string(payload)
 
@@ -45,7 +45,7 @@ func (h *Handler) OnMessage(ctx context.Context, peer *framework.Peer, payload [
 }
 
 // OnJoin 處理玩家進入
-func (h *Handler) OnJoin(ctx context.Context, peer *framework.Peer) error {
+func (_ *Handler) OnJoin(_ context.Context, peer *engine.Peer) error {
 	slog.Info("Player Joined Stateful Service",
 		"user_id", peer.User.ID,
 		"session_id", peer.SessionID,
@@ -71,7 +71,7 @@ func (h *Handler) OnJoin(ctx context.Context, peer *framework.Peer) error {
 }
 
 // OnQuit 處理玩家離開
-func (h *Handler) OnQuit(ctx context.Context, peer *framework.Peer) error {
+func (_ *Handler) OnQuit(_ context.Context, peer *engine.Peer) error {
 	slog.Info("Player Quit Stateful Service",
 		"user_id", peer.User.ID,
 		"session_id", peer.SessionID,

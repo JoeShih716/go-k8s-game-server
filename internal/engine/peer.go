@@ -1,4 +1,4 @@
-package framework
+package engine
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
-	connector_sdk "github.com/JoeShih716/go-k8s-game-server/internal/sdk/connector" // SDK
+	connector_sdk "github.com/JoeShih716/go-k8s-game-server/internal/grpc_client/connector" // Client
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 )
 
@@ -101,7 +101,7 @@ func (m *PeerManager) Get(sessionID string) *Peer {
 
 // Broadcast 廣播給該 Pod 上所有玩家
 func (m *PeerManager) Broadcast(ctx context.Context, payload []byte) {
-	m.peers.Range(func(key, value any) bool {
+	m.peers.Range(func(_ any, value any) bool {
 		p := value.(*Peer)
 		go func(peer *Peer) {
 			if err := peer.Send(ctx, payload); err != nil {

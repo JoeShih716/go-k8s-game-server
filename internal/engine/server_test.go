@@ -1,4 +1,4 @@
-package framework_test
+package engine_test
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto"
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/gameRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
-	"github.com/JoeShih716/go-k8s-game-server/internal/core/framework"
+	"github.com/JoeShih716/go-k8s-game-server/internal/engine"
 	mock_ports "github.com/JoeShih716/go-k8s-game-server/test/mocks/core/ports"
-	mock_framework "github.com/JoeShih716/go-k8s-game-server/test/mocks/framework"
+	mock_engine "github.com/JoeShih716/go-k8s-game-server/test/mocks/engine"
 )
 
 // TestServer_OnPlayerJoin_Success 測試玩家成功加入 (Stateless)
@@ -22,7 +22,7 @@ func TestServer_OnPlayerJoin_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	// 2. 建立 Mock Objects
-	mockHandler := mock_framework.NewMockGameHandler(ctrl)
+	mockHandler := mock_engine.NewMockGameHandler(ctrl)
 	mockUserSvc := mock_ports.NewMockUserService(ctrl)
 	mockWalletSvc := mock_ports.NewMockWalletService(ctrl)
 
@@ -42,7 +42,7 @@ func TestServer_OnPlayerJoin_Success(t *testing.T) {
 	mockWalletSvc.EXPECT().GetBalance(gomock.Any(), userID).Return(decimal.NewFromInt(100), nil)
 
 	// 4. 初始化 Server (Stateless 模式)
-	server := framework.NewServer(mockHandler, nil, false, "test-service", mockUserSvc, mockWalletSvc)
+	server := engine.NewServer(mockHandler, nil, false, "test-service", mockUserSvc, mockWalletSvc)
 
 	// 5. 執行測試
 	req := &gameRPC.JoinReq{

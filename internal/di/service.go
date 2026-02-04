@@ -3,12 +3,12 @@ package di
 import (
 	"log/slog"
 
-	"github.com/JoeShih716/go-k8s-game-server/internal/config"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/ports"
 	infraRedis "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/redis"
 	registry "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/service_discovery/redis"
 	user "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/user/redis"
 	wallet "github.com/JoeShih716/go-k8s-game-server/internal/infrastructure/wallet/mock"
+	"github.com/JoeShih716/go-k8s-game-server/internal/kit/config"
 )
 
 // ProvideUserService creates a UserService using the 'user' Redis DB
@@ -26,7 +26,7 @@ func ProvideUserService(cfg *config.Config, redisProvider *infraRedis.Provider) 
 }
 
 // ProvideRegistry creates a ServiceRegistry using the 'central' Redis DB
-func ProvideRegistry(cfg *config.Config, redisProvider *infraRedis.Provider) ports.RegistryService {
+func ProvideRegistry(_ *config.Config, redisProvider *infraRedis.Provider) ports.RegistryService {
 	centralRedisClient := redisProvider.GetCentral()
 	if centralRedisClient == nil {
 		panic("Redis Central DB (key: 'central') not found in config")
@@ -35,11 +35,7 @@ func ProvideRegistry(cfg *config.Config, redisProvider *infraRedis.Provider) por
 }
 
 // ProvideWalletService selects implementation based on Environment
-func ProvideWalletService(cfg *config.Config, redisProvider *infraRedis.Provider) ports.WalletService {
-	if cfg.App.Env == "prod" {
-		slog.Warn("Using Mock Wallet in PROD (Not implemented yet)")
-		return wallet.NewMockWallet()
-	}
-	slog.Info("Using Mock Wallet Service")
+func ProvideWalletService(_ *config.Config, _ *infraRedis.Provider) ports.WalletService {
+	slog.Warn("Using Mock Wallet in PROD (Not implemented yet)")
 	return wallet.NewMockWallet()
 }

@@ -16,8 +16,8 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/api/proto/connectorRPC"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/handler"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/session"
-	"github.com/JoeShih716/go-k8s-game-server/internal/pkg/bootstrap"
-	central_sdk "github.com/JoeShih716/go-k8s-game-server/internal/sdk/central"
+	central_sdk "github.com/JoeShih716/go-k8s-game-server/internal/grpc_client/central"
+	"github.com/JoeShih716/go-k8s-game-server/internal/kit/bootstrap"
 	grpcpkg "github.com/JoeShih716/go-k8s-game-server/pkg/grpc"
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )

@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/JoeShih716/go-k8s-game-server/internal/config"
+	"github.com/JoeShih716/go-k8s-game-server/internal/kit/config"
 )
 
 // App 封裝了應用程式的基礎組件

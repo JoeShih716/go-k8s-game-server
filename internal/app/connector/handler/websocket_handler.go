@@ -14,7 +14,7 @@ import (
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/protocol"
 	"github.com/JoeShih716/go-k8s-game-server/internal/app/connector/session"
 	"github.com/JoeShih716/go-k8s-game-server/internal/core/domain"
-	game_sdk "github.com/JoeShih716/go-k8s-game-server/internal/sdk/game" // SDK
+	game_client "github.com/JoeShih716/go-k8s-game-server/internal/grpc_client/game" // Client
 	"github.com/JoeShih716/go-k8s-game-server/pkg/wss"
 )
 
@@ -115,7 +115,7 @@ func (h *WebsocketHandler) OnDisconnect(conn wss.Client) {
 			}
 
 			// 使用 SDK
-			client := game_sdk.NewClient(rpcConn)
+			client := game_client.NewClient(rpcConn)
 			_, err = client.Quit(ctx, uid, conn.ID())
 
 			if err != nil {
@@ -297,7 +297,7 @@ func (h *WebsocketHandler) handleEnterGame(ctx context.Context, conn wss.Client,
 	}
 
 	// 使用 SDK
-	client := game_sdk.NewClient(rpcConn)
+	client := game_client.NewClient(rpcConn)
 	joinCtx, joinCancel := context.WithTimeout(ctx, 3*time.Second)
 	defer joinCancel()
 
@@ -343,7 +343,7 @@ func (h *WebsocketHandler) forwardToBackend(ctx context.Context, conn wss.Client
 	}
 
 	// 使用 SDK
-	client := game_sdk.NewClient(rpcConn)
+	client := game_client.NewClient(rpcConn)
 
 	// 呼叫後端
 	callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -364,7 +364,7 @@ func (h *WebsocketHandler) forwardToBackend(ctx context.Context, conn wss.Client
 // Helpers
 // -------------------------------------------------------------
 
-func (h *WebsocketHandler) stopTimer(conn wss.Client, tagKey string) {
+func (_ *WebsocketHandler) stopTimer(conn wss.Client, tagKey string) {
 	if v, ok := conn.GetTag(tagKey); ok {
 		if t, ok := v.(*time.Timer); ok {
 			t.Stop()
@@ -372,7 +372,7 @@ func (h *WebsocketHandler) stopTimer(conn wss.Client, tagKey string) {
 	}
 }
 
-func (h *WebsocketHandler) getUserID(conn wss.Client) string {
+func (_ *WebsocketHandler) getUserID(conn wss.Client) string {
 	if v, ok := conn.GetTag("user_id"); ok {
 		if s, ok := v.(string); ok {
 			return s
@@ -381,7 +381,7 @@ func (h *WebsocketHandler) getUserID(conn wss.Client) string {
 	return ""
 }
 
-func (h *WebsocketHandler) sendError(conn wss.Client, action protocol.ConnectorProtocol, msg string) {
+func (_ *WebsocketHandler) sendError(conn wss.Client, action protocol.ConnectorProtocol, msg string) {
 	resp := protocol.Response{
 		Action: action,
 		Error:  msg,
@@ -390,7 +390,7 @@ func (h *WebsocketHandler) sendError(conn wss.Client, action protocol.ConnectorP
 	_ = conn.SendMessage(string(bytes))
 }
 
-func (h *WebsocketHandler) sendResponse(conn wss.Client, action protocol.ConnectorProtocol, data any) {
+func (_ *WebsocketHandler) sendResponse(conn wss.Client, action protocol.ConnectorProtocol, data any) {
 	resp := protocol.Response{
 		Action: action,
 		Data:   data,
